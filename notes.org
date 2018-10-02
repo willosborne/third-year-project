@@ -1,0 +1,26 @@
+* eDSL to represent presentations in Haskell using Functional Reactive Programming
+** Design
+*** DSL structure
+*** Code generation
+*** Target HTML/JS platform
+**** Responsive design
+**** Slides, prezi-style open area?
+- Prezi-style open area with slides inside others promotes need for mouse interaction
+- However having a "move the camera around" approach to things could open up lots of interesting other options
+- "Slides" achieved by simply teleporting camera
+- Should definitely have language to eliminate need to place slides
+**** Placement of elements on slide
+- Using co-ordinates is really horrible for most purposes
+** Existing tech
+*** reveal.js 
+[[https://revealjs.com/#/]]
+[[https://github.com/hakimel/reveal.js]]
+*** Slideshow: Functional Presentations
+http://www.cs.utah.edu/plt/publications/jfp05-ff.pdf
+Not THAT relevant, but does some neat stuff (mostly static image composition with no reactive programming)
+** Papers / web pages
+*** reactive-banana walkthrough https://wiki.haskell.org/FRP_explanation_using_reactive-banana
+** Libraries
+* Tricky things
+** How does FRP behaviour expressed in Haskell translate into JavaScript 
+(is that just a mirrored JS FRP?)
