@@ -1,0 +1,18 @@
+* To do list
+** DONE Figure out how to copy in HTML files
+It's impossible.
+** DONE Get canvas rendering working
+*** DONE Work out how to use getElementById from within haskell
+** TODO Design of render system [0/4]
+*** TODO Design some kind of Picture/Element/Content class to store data about on-screen content
+*** TODO Write rendering functions to wrap around Canvas [0/5]
+**** TODO Text rendering
+**** TODO Image rendering
+**** TODO Line rendering
+**** TODO Poly rendering
+**** TODO Spline rendering?
+*** TODO Functions to transform and manipulate content
+**** TODO Translate
+**** TODO Rotate
+**** TODO Scale
+**** TODO Change colour

@@ -1,3 +1,8 @@
+* Queries 16/10/18
+** How to go about choosing a type of FRP
+** Trouble with Haskell libraries (GHCjs)
+Version hell
+** Reflex FRP
 * eDSL to represent presentations in Haskell using Functional Reactive Programming
 ** Design
 *** DSL structure
