@@ -1,18 +1,31 @@
 * To do list
-** DONE Figure out how to copy in HTML files
+** DONE [#A] Figure out how to copy in HTML files
 It's impossible.
 ** DONE Get canvas rendering working
 *** DONE Work out how to use getElementById from within haskell
-** TODO Design of render system [0/4]
-*** TODO Design some kind of Picture/Element/Content class to store data about on-screen content
-*** TODO Write rendering functions to wrap around Canvas [0/5]
-**** TODO Text rendering
-**** TODO Image rendering
-**** TODO Line rendering
-**** TODO Poly rendering
-**** TODO Spline rendering?
-*** TODO Functions to transform and manipulate content
-**** TODO Translate
-**** TODO Rotate
-**** TODO Scale
-**** TODO Change colour
+** TODO [#B] Refactor cabal stuff to expose core as a library
+** TODO Design of render system [1/4]
+*** DONE Design some kind of Picture/Element/Content class to store data about on-screen content
+*** TODO Make canvas resize automatically
+**** TODO Think about how to scale on-screen content 
+*** TODO Write rendering functions to wrap around Canvas [2/8]
+**** TODO Text rendering [2/3]
+***** DONE basic text rendering w/ css fonts
+***** DONE text wrapping
+https://www.html5canvastutorials.com/tutorials/html5-canvas-wrap-text-tutorial/
+***** TODO bold, italic (et al) rendering
+This will be very difficult.
+**** TODO [#A] Image rendering
+**** DONE Line rendering
+**** DONE Poly rendering
+**** TODO [#C] Spline rendering?
+**** TODO [#A] Filled shapes 
+Simply define filled versions of all primitives?
+Or define a FillStyle control object?
+**** TODO [#B] Think about how to keep framework as extensible as possible
+*** TODO [#A] Functions to transform and manipulate content
+**** DONE Translate
+**** DONE Rotate
+**** DONE Scale
+**** TODO Change fill and line colour
+**** TODO Gradient fills

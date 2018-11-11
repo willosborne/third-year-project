@@ -4,8 +4,12 @@ import Content
 
 import GHCJS.DOM.CanvasRenderingContext2D
 import GHCJS.DOM.CanvasPath
+import qualified GHCJS.DOM.TextMetrics as TextMetrics (getWidth) 
 
 
+-- import Data.List.Split (splitOn)
+
+degreesToRadians :: Floating a => a -> a
 degreesToRadians degrees = degrees * (pi / 180)
 
 render :: CanvasRenderingContext2D -> Content -> IO ()
@@ -21,55 +25,105 @@ render ctx (Combine c1 c2) = do
   render ctx c1
   render ctx c2
 
-render ctx (Translate c x' y') = do
+render ctx (Translate x' y' c) = do
   let x = realToFrac x'
   let y = realToFrac y'
   translate ctx x y
   render ctx c
   translate ctx (-x) (-y)
 
-render ctx (Scale c x' y') = do
+render ctx (Scale x' y' c) = do
   scale ctx x y
   render ctx c
   scale ctx (-x) (-y)
   where x = realToFrac x'
         y = realToFrac y'
 
-render ctx (Rotate c angle') = do
+render ctx (Rotate angle' c) = do
   rotate ctx angle
   render ctx c
   rotate ctx (-angle)
   where angle = realToFrac angle'
 
-render ctx (Path []) = return ()
+-- render ctx (SetFillColor color) = do
+--   set
+
+render _ (Path []) = return ()
 render ctx (Path ((x, y) : points)) = do
   moveTo ctx x y
-  renderPath ctx points
+  renderPath points
   stroke ctx
 
-  -- TODO: can almost certainly do this neatly with map
-  where renderPath ctx [] = return ()
-        renderPath ctx ((px, py) : ps) = do
+  -- TODO: can almost certainly do this neatly with mapM
+  where renderPath [] = return ()
+        renderPath ((px, py) : ps) = do
           lineTo ctx px py
-          renderPath ctx ps
+          renderPath ps
+
+render _ (Polygon []) = return ()
+render ctx (Polygon ((x, y) : points)) = do
+  moveTo ctx x y
+  renderPath points
+  closePath ctx
+  stroke ctx
+
+  -- TODO: can almost certainly do this neatly with mapM
+  where renderPath [] = return ()
+        renderPath ((px, py) : ps) = do
+          lineTo ctx px py
+          renderPath ps
 
 -- NOTE: do i need to move back after rendering a line
 render ctx (RegularPolygon sides radius) = do
   let step = (pi * 2) / (fromIntegral sides)
-      max = sides - 1
   moveTo ctx radius 0
-  poly ctx 0 step
+  poly 0 step
   stroke ctx
 
   where
-    poly ctx n step
-      | n < (step - 1) = do
-            let x' = radius * (sin (step * n))
-            let y' = radius * (cos (step * n))
+    poly n step
+      | n < (sides) = do
+            let x' = radius * (cos (step * (fromIntegral n)))
+            let y' = radius * (sin (step * (fromIntegral n)))
             lineTo ctx x' y'
+            poly (n + 1) step
       | otherwise = closePath ctx
 
 render ctx (Circle radius) = do
   render ctx (RegularPolygon 60 radius)
 
+render ctx (Text font width' text) = do
+  setFont ctx font
+  setTextAlign ctx "left"
+  case width' of
+    Just width -> renderTextWrapped ctx text width 40
+    _          -> fillText ctx text 0 0 Nothing
+  
 render _ _ = undefined
+
+
+renderTextWrapped :: CanvasRenderingContext2D -> String -> Float -> Float -> IO ()
+renderTextWrapped ctx text maxWidth lineHeight = do
+  lines' <- ((wordsToLines ctx maxWidth) . words) text
+  renderLines 0 lines'
+  where
+    renderLines :: Float -> [String] -> IO ()
+    renderLines _ []           = return ()
+    renderLines y (line:lines) = do
+      fillText ctx line 0 y Nothing 
+      renderLines (y + lineHeight) lines
+
+              
+wordsToLines :: CanvasRenderingContext2D -> Float -> [String] -> IO [String]
+wordsToLines _ _ [] = return []
+wordsToLines ctx maxWidth wordList = wordsToLinesInternal wordList ""
+  where
+    wordsToLinesInternal :: [String] -> String -> IO [String]
+    wordsToLinesInternal [] line           = return [line]
+    wordsToLinesInternal (word:words) line = do
+      let lineWord = line ++ " " ++ word
+      textMet <- measureText ctx lineWord
+      lineWordLength <- TextMetrics.getWidth textMet
+      case lineWordLength <= maxWidth of
+        True        -> wordsToLinesInternal words lineWord
+        _           -> (line :) <$> wordsToLinesInternal words word

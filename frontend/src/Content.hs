@@ -7,13 +7,17 @@ type Font = String -- just represents the javascript name of the font
 -- TODO add more shapes
 data Content =
   Empty
-  | Rect Double Double -- width, height -- TODO consider filled shapes
+  | Rect Double Double -- width, height TODO consider filled shapes
   | Circle Double -- radius
   | Line Double Double Double Double -- begin, end
   | Path [(Double, Double)] -- list of points to connect with path
+  | Polygon [(Double, Double)] -- list of points to connect; join up at end
   | RegularPolygon Int Double -- num. sides, radius
-  | Translate Content Double Double -- content to transform, x, y
-  | Rotate Content Double -- content, angle
-  | Scale Content Double Double -- content, xscale, yscale
-  | Combine Content Content -- combine two Contents
-  
+  | Translate Double Double Content --  x, y, content to transform
+  | Rotate Double Content -- angle, content 
+  | Scale Double Double Content -- xscale, yscale, content
+  | Combine Content Content -- combine two Contents   NOTE: consider renaming
+  | Text Font (Maybe Float) String  -- font, max width, text  TODO: wrap text rather than squashing it!
+  | FillColor String -- fill color
+  | StrokeColor String -- fill color
+  -- TODO add splines
