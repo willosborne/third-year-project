@@ -3,16 +3,16 @@ module Main where
 -- import GHCJS
 import GHCJS.DOM
 import GHCJS.DOM.Window (getInnerWidth, getInnerHeight)
-import GHCJS.DOM.Node
+-- import GHCJS.DOM.Node
 -- import GHCJS.DOM.Types
 import GHCJS.DOM.Document
 import GHCJS.DOM.Element
-import GHCJS.DOM.EventM
-import GHCJS.DOM.GlobalEventHandlers
-import GHCJS.DOM.HTMLHyperlinkElementUtils
+-- import GHCJS.DOM.EventM
+-- import GHCJS.DOM.GlobalEventHandlers
+-- import GHCJS.DOM.HTMLHyperlinkElementUtils
 import GHCJS.DOM.HTMLCanvasElement (getContext)
 import GHCJS.DOM.CanvasRenderingContext2D
-import GHCJS.DOM.CanvasPath
+-- import GHCJS.DOM.CanvasPath
 import GHCJS.DOM.NonElementParentNode (getElementById)
 -- import Control.Monad.IO.Class (MonadIO(..))
 
@@ -70,7 +70,7 @@ helloMain :: IO ()
 helloMain = do
   win <- currentWindowUnchecked
   doc <- currentDocumentUnchecked
-  body <- getBodyUnchecked doc
+  -- body <- getBodyUnchecked doc
 
   -- _ <- on doc click $ do
   --   (x, y) <- mouseClientXY
@@ -93,13 +93,14 @@ helloMain = do
   --                          \ top:0px; bottom: 0px; left: 0px; right: 0px;\"" 
   ctx <- fixedSizeCanvas doc w h
   -- ctx <- fullScreenCanvas doc 
-  -- moveTo ctx 10 10
-  -- lineTo ctx 100 100
-  -- stroke ctx
 
-  let con = (Combine (Line 10 10 300 100) (Translate (Rotate (Rect 203 101) 45) 100 100))
-  render ctx con
-  -- render ctx (Path [(100, 100), (300, 100), (300, 300), (500, 500)])
-  render ctx (Translate (RegularPolygon 5 100) 100 100)
+  -- let con = (Combine (Line 10 10 300 100) (Translate (Rotate (Rect 203 101) 45) 100 100))
+  -- render ctx con
+  render ctx $ Translate 200 400 $ Polygon [(0, 0), (50, 0), (50, 50), (100, 50), (100, 100), (50, 100), (50, 200), (0, 200), (0, 100), (-50, 100), (-50, 100), (-50, 50), (0, 50)]
+  render ctx $ Translate 100 100 $ Rotate 90 $ RegularPolygon 5 100
+  render ctx $ Translate 500 100 $ Rotate 45 $ Rect 50 100
+  render ctx $ Translate 100 300 $ Text "32px Garamond"
+                                    (Just 50)
+                                    "The FitnessGram Pacer Test is a multi-stage aerobic capacity test designed to..." 
 
   syncPoint
