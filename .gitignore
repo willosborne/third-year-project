@@ -1,3 +1,5 @@
 .stack-work/
 ReactivePresentations.cabal
 *~
+dist-ghcjs/
+dist-newstyle/
