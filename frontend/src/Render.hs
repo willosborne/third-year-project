@@ -29,8 +29,8 @@ render ctx (Rect w h) = do
   stroke ctx
 
 render ctx (FRect w' h') = do
-  -- rect ctx (-w/2) (-h/2) w h
   fillRect ctx (-w/2) (-h/2) w h
+  rect ctx (-w'/2) (-h'/2) w' h'
   stroke ctx
   where
     w = realToFrac w'
@@ -48,9 +48,10 @@ render ctx (Translate x' y' c) = do
   translate ctx (-x) (-y)
 
 render ctx (Scale x' y' c) = do
+  save ctx
   scale ctx x y
   render ctx c
-  scale ctx (-x) (-y)
+  restore ctx
   where x = realToFrac x'
         y = realToFrac y'
 
@@ -58,7 +59,7 @@ render ctx (Rotate angle' c) = do
   rotate ctx angle
   render ctx c
   rotate ctx (-angle)
-  where angle = realToFrac angle'
+  where angle = realToFrac $ degreesToRadians angle'
 
 render ctx (FillColor r g b a c) = do
   let str = "rgba("
@@ -76,11 +77,20 @@ render ctx (StrokeColor r g b a c) = do
          ++ intercalate "," [show r, show g, show b, show a]
          ++ ")"
   let color = toJSString str
+  save ctx
   setStrokeStyle ctx $ CanvasStyle color
 
   render ctx c
 
-  setStrokeStyle ctx $ CanvasStyle $ toJSString "#000000"
+  restore ctx
+  -- setStrokeStyle ctx $ CanvasStyle $ toJSString "#000000"
+
+render ctx (StrokeWidth w c) = do
+  save ctx
+  setLineWidth ctx w
+  render ctx c
+  restore ctx 
+  -- setLineWidth ctx 1
 
 render _ (Path []) = return ()
 render ctx (Path ((x, y) : points)) = do
@@ -101,7 +111,6 @@ render ctx (Polygon ((x, y) : points)) = do
   closePath ctx
   stroke ctx
 
-  -- TODO: can almost certainly do this neatly with mapM
   where renderPath [] = return ()
         renderPath ((px, py) : ps) = do
           lineTo ctx px py
@@ -114,8 +123,8 @@ render ctx (FPolygon ((x, y) : points)) = do
   closePath ctx
   fill ctx $ Just CanvasWindingRuleNonzero
   stroke ctx
+  -- NOTE: how to handle fill and stroke? need to be able to turn stroke on or off
 
-  -- TODO: can almost certainly do this neatly with mapM
   where renderPath [] = return ()
         renderPath ((px, py) : ps) = do
           lineTo ctx px py

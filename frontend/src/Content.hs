@@ -24,4 +24,5 @@ data Content =
   | Text Font (Maybe Float) String  -- font, max width, text  TODO: wrap text rather than squashing it!
   | FillColor Int Int Int Float Content -- fill color
   | StrokeColor Int Int Int Float Content -- fill color
+  | StrokeWidth Float Content
   -- TODO add splines
