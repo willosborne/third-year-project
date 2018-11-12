@@ -97,11 +97,11 @@ helloMain = do
   -- let con = (Combine (Line 10 10 300 100) (Translate (Rotate (Rect 203 101) 45) 100 100))
   -- render ctx con
   let cross = FillColor 255 0 0 1 $ FPolygon [(0, 0), (50, 0), (50, 50), (100, 50), (100, 100), (50, 100), (50, 200), (0, 200), (0, 100), (-50, 100), (-50, 100), (-50, 50), (0, 50)]
-  render ctx $ Translate 200 400 $ Rotate (degreesToRadians 180) $ cross
+  render ctx $ Translate 200 400 $ StrokeWidth 3 $ Rotate 180 $ Scale 2 1 cross
   render ctx $ Translate 100 100 $ Rotate 90 $ RegularPolygon 5 100
   render ctx $ Translate 500 100 $ Rotate 45 $ Rect 50 100
   render ctx $ Translate 100 300 $ Text "32px Garamond"
-                                    (Just 50)
+                                    (Just 100)
                                     "The FitnessGram Pacer Test is a multi-stage aerobic capacity test designed to..." 
 
   syncPoint

@@ -22,6 +22,14 @@ This will be very difficult.
 **** TODO [#A] Filled shapes 
 Simply define filled versions of all primitives?
 Or define a FillStyle control object?
+
+What should defaults be?
+- Black stroke, no fill
+- Setting fill turns on fill
+ 
+FillColor $ Content -- fill and stroke 
+FillColor $ 
+FillColor $ StrokeColor $ Content -- fill and stroke
 **** TODO [#B] Think about how to keep framework as extensible as possible
 *** TODO [#A] Functions to transform and manipulate content
 **** DONE Translate
