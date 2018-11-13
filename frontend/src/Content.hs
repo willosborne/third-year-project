@@ -26,3 +26,9 @@ data Content =
   | StrokeColor Int Int Int Float Content -- fill color
   | StrokeWidth Float Content
   -- TODO add splines
+
+instance Monoid Content where
+  mappend = Combine
+  mempty = Empty
+
+--TODO add Color class to simplify things

@@ -16,6 +16,8 @@ import GHCJS.DOM.CanvasRenderingContext2D
 import GHCJS.DOM.NonElementParentNode (getElementById)
 -- import Control.Monad.IO.Class (MonadIO(..))
 
+import Data.Monoid ((<>))
+
 import Unsafe.Coerce (unsafeCoerce)
 -- import JavaScript.Web.Canvas
 
@@ -66,6 +68,17 @@ fixedSizeCanvas doc x y = canvasContext doc $ attributes x y
 --                      \solid #000000; \
 --                      \top:0px;bottom:0px;left:0px;right:0px;\""                          
 
+cross :: Content
+cross = Translate (-75) (-100) $ FPolygon [(0, 0), (50, 0), (50, 50), (100, 50), (100, 100), (50, 100), (50, 200), (0, 200), (0, 100), (-50, 100), (-50, 100), (-50, 50), (0, 50)]
+
+drawing :: Content
+drawing = Translate 400 400 $
+  (FillColor 255 0 0 1 $ StrokeWidth 3 $ Rotate 180 $ Scale 3 3 cross) <> -- filled, stroked path
+  (FillColor 0 255 0 1 $ FRegularPolygon 8 100) <> -- filled, stroked regular polygon
+  (StrokeColor 0 0 255 1 $ StrokeWidth 4 $ Path [(-50, -50), (50, -50), (-50, 50)]) <> -- coloured path
+  (Translate 0 100 $ Text "22px Garamond" (Just 600) "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec placerat laoreet vestibulum. Nam pellentesque libero a urna bibendum, at pellentesque libero tincidunt. Mauris elementum neque et lacus sollicitudin blandit. Mauris ut felis sodales, viverra dui vitae, bibendum est. Sed iaculis mauris eget orci maximus rutrum ac quis urna. Aenean fermentum semper sapien vel aliquam. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Cras consectetur at eros eget tempor. Ut et ligula suscipit, cursus metus et, rutrum tortor. Praesent iaculis efficitur arcu, vitae venenatis neque convallis ac. Nulla at risus purus. Vestibulum sit amet enim condimentum, facilisis nunc ac, iaculis nunc.") <>
+  (FillColor 255 255 255 1 $ Translate 0 150 $ FCircle 50)
+
 helloMain :: IO ()
 helloMain = do
   win <- currentWindowUnchecked
@@ -81,27 +94,19 @@ helloMain = do
   --   appendChild_ newPara text
   --   appendChild_ body newPara
 
-  -- canvas <- uncheckedCastTo HTMLCanvasElement <$> createElement doc "canvas"
-  -- appendChild_ body canvas
-  -- canvas <- unsafeToCanvas <$> createElement doc "canvas"
-  -- canvas <- castToHTMLCanvasElement $ createElement doc "canvas"
-  -- ctx <- liftIO $ getContext canvas
-  -- c <- fmap CanvasRenderingContext2D $ liftIO $ getContext canvas "2d"
   w <- getInnerWidth win
   h <- getInnerHeight win
-  -- ctx <- canvasContext doc "style=\"border: 1px solid black;\
-  --                          \ top:0px; bottom: 0px; left: 0px; right: 0px;\"" 
   ctx <- fixedSizeCanvas doc w h
-  -- ctx <- fullScreenCanvas doc 
+  -- let crosses = (FillColor 255 0 0 1 cross) <> (Rotate 180 (FillColor 0 0 255 1 cross)) <> (Rotate 90 (FillColor 0 255 0 1 cross))
+  -- let r = FRect 100 80
+  -- let rects = (FillColor 0 0 255 1 (StrokeWidth 5 (FCircle 100))) <> (FillColor 255 0 0 1 r) <> (Translate 30 30 (FillColor 0 255 0 1 r))
+  -- render ctx $ Translate 300 300 rects
+  -- render ctx $ Translate 100 100 $ Rotate 90 $ RegularPolygon 5 100
+  -- render ctx $ Translate 500 100 $ Rotate 45 $ Rect 50 100
+  -- render ctx $ Translate 100 300 $ FillColor 255 0 0 1 $ Text "32px Garamond"
+  --                                                         (Just 200)
+  --                                                         "The FitnessGram Pacer Test is a multi-stage aerobic capacity test designed to..." 
 
-  -- let con = (Combine (Line 10 10 300 100) (Translate (Rotate (Rect 203 101) 45) 100 100))
-  -- render ctx con
-  let cross = FillColor 255 0 0 1 $ FPolygon [(0, 0), (50, 0), (50, 50), (100, 50), (100, 100), (50, 100), (50, 200), (0, 200), (0, 100), (-50, 100), (-50, 100), (-50, 50), (0, 50)]
-  render ctx $ Translate 200 400 $ StrokeWidth 3 $ Rotate 180 $ Scale 2 1 cross
-  render ctx $ Translate 100 100 $ Rotate 90 $ RegularPolygon 5 100
-  render ctx $ Translate 500 100 $ Rotate 45 $ Rect 50 100
-  render ctx $ Translate 100 300 $ Text "32px Garamond"
-                                    (Just 100)
-                                    "The FitnessGram Pacer Test is a multi-stage aerobic capacity test designed to..." 
+  render ctx drawing
 
   syncPoint

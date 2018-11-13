@@ -25,10 +25,12 @@ render ctx (Line x1 y1 x2 y2) = do
   stroke ctx
 
 render ctx (Rect w h) = do
+  beginPath ctx
   rect ctx (-w/2) (-h/2) w h
   stroke ctx
 
 render ctx (FRect w' h') = do
+  beginPath ctx
   fillRect ctx (-w/2) (-h/2) w h
   rect ctx (-w'/2) (-h'/2) w' h'
   stroke ctx
@@ -94,6 +96,7 @@ render ctx (StrokeWidth w c) = do
 
 render _ (Path []) = return ()
 render ctx (Path ((x, y) : points)) = do
+  beginPath ctx
   moveTo ctx x y
   renderPath points
   stroke ctx
@@ -106,6 +109,7 @@ render ctx (Path ((x, y) : points)) = do
 
 render _ (Polygon []) = return ()
 render ctx (Polygon ((x, y) : points)) = do
+  beginPath ctx
   moveTo ctx x y
   renderPath points
   closePath ctx
@@ -132,6 +136,7 @@ render ctx (FPolygon ((x, y) : points)) = do
 
 -- NOTE: do i need to move back after rendering a line
 render ctx (RegularPolygon sides radius) = do
+  beginPath ctx
   let step = (pi * 2) / (fromIntegral sides)
   moveTo ctx radius 0
   poly 0 step
@@ -147,6 +152,7 @@ render ctx (RegularPolygon sides radius) = do
       | otherwise = closePath ctx
 
 render ctx (FRegularPolygon sides radius) = do
+  beginPath ctx
   let step = (pi * 2) / (fromIntegral sides)
   moveTo ctx radius 0
   poly 0 step
@@ -172,10 +178,10 @@ render ctx (Text font width' text) = do
   setFont ctx font
   setTextAlign ctx "left"
   case width' of
-    Just width -> renderTextWrapped ctx text width 40
+    Just width -> renderTextWrapped ctx text width 40 --TODO automate text height property
     _          -> fillText ctx text 0 0 Nothing
   
-render _ _ = undefined
+render _ Empty = return ()
 
 
 renderTextWrapped :: CanvasRenderingContext2D -> String -> Float -> Float -> IO ()
