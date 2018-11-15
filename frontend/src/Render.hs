@@ -63,24 +63,20 @@ render ctx (Rotate angle' c) = do
   rotate ctx (-angle)
   where angle = realToFrac $ degreesToRadians angle'
 
-render ctx (FillColor r g b a c) = do
-  let str = "rgba("
-         ++ intercalate "," [show r, show g, show b, show a]
-         ++ ")"
-  let color = toJSString str
-  setFillStyle ctx $ CanvasStyle color
+render ctx (FillColor color c) = do
+  let colorStr = toJSString $ show color
+  save ctx
+  setFillStyle ctx $ CanvasStyle colorStr
 
   render ctx c
 
-  setFillStyle ctx $ CanvasStyle $ toJSString "#000000"
+  restore ctx
+  -- setFillStyle ctx $ CanvasStyle $ toJSString "#000000"
 
-render ctx (StrokeColor r g b a c) = do
-  let str = "rgba("
-         ++ intercalate "," [show r, show g, show b, show a]
-         ++ ")"
-  let color = toJSString str
+render ctx (StrokeColor color c) = do
+  let colorStr = toJSString $ show color
   save ctx
-  setStrokeStyle ctx $ CanvasStyle color
+  setStrokeStyle ctx $ CanvasStyle colorStr
 
   render ctx c
 

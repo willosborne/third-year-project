@@ -1,6 +1,7 @@
 * To do list
-** DONE [#A] Figure out how to copy in HTML files
-It's impossible.
+** TODO [#A] Copy in custom html/css on first build
+Currently it just uses the default index.html which won't include the CSS reset we want.
+Expose index.html for user editing?
 ** DONE Get canvas rendering working
 *** DONE Work out how to use getElementById from within haskell
 ** TODO [#B] Refactor cabal stuff to expose core as a library
@@ -15,7 +16,13 @@ It's impossible.
 https://www.html5canvastutorials.com/tutorials/html5-canvas-wrap-text-tutorial/
 ***** TODO bold, italic (et al) rendering
 This will be very difficult.
-**** TODO [#A] Image rendering
+**** TODO [#A] Image rendering [0/5]
+***** TODO Image pre-loader
+***** TODO Content classes for image
+***** TODO Ability to scale and crop image
+***** TODO Load from external URL
+***** TODO Load from local file
+Need to expose simple system for loading these images w/o copying to build directory
 **** DONE Line rendering
 **** DONE Poly rendering
 **** TODO [#C] Spline rendering?
@@ -35,5 +42,5 @@ FillColor $ StrokeColor $ Content -- fill and stroke
 **** DONE Translate
 **** DONE Rotate
 **** DONE Scale
-**** TODO Change fill and line colour
+**** DONE Change fill and line colour
 **** TODO Gradient fills
