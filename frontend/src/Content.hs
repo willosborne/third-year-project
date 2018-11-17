@@ -2,11 +2,12 @@ module Content where
 
 import Data.List (intercalate)
 
+import Image
+
 type Font = String -- just represents the javascript name of the font
 
 -- Content - represents on-screen elements.
 -- None of these contain position or rotation, as all of those are handled by translations
--- TODO add more shapes
 data Content =
   Empty
   | Rect Double Double -- width, height TODO consider filled shapes
@@ -27,7 +28,9 @@ data Content =
   | FillColor Color Content -- fill color
   | StrokeColor Color Content -- fill color
   | StrokeWidth Float Content
-  -- TODO add splines
+  | Image String ImageSize
+  deriving (Eq, Show)
+  -- TODO add splines and arcs
 
 instance Monoid Content where
   mappend = Combine
@@ -36,6 +39,7 @@ instance Monoid Content where
 -- TODO extend to contain HSVA, etc
 data Color = RGBA Int Int Int Float
            | RGB Int Int Int
+           deriving (Eq)
 
 instance Show Color where
   show (RGBA r g b a) = "rgba(" ++

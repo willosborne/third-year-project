@@ -1,24 +1,37 @@
+{-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving #-}
+
 module Render where
 
-import Content
+import           Content
+import           Image
+import           ImagePreloader
 
-import GHCJS.DOM.CanvasRenderingContext2D
-import GHCJS.DOM.CanvasPath
-import GHCJS.DOM.Enums (CanvasWindingRule (CanvasWindingRuleNonzero))
-import GHCJS.DOM.Types (CanvasStyle (..))
+import           GHCJS.DOM.CanvasRenderingContext2D
+import           GHCJS.DOM.CanvasPath
+import           GHCJS.DOM.Enums (CanvasWindingRule (CanvasWindingRuleNonzero))
+import           GHCJS.DOM.Types (CanvasStyle (..))
+import GHCJS.DOM.HTMLImageElement (getWidth, getHeight)
 
-import Data.List (intercalate)
-import GHCJS.Prim (toJSString)
+import           Data.List (intercalate)
+import           GHCJS.Prim (toJSString)
 
-import qualified GHCJS.DOM.TextMetrics as TextMetrics (getWidth) 
+import qualified GHCJS.DOM.TextMetrics as TextMetrics (getWidth)
+
+-- import           Control.Monad.IO
+import           Control.Monad.Reader
 
 
--- import Data.List.Split (splitOn)
+-- newtype RenderM = RenderM { unRenderM :: ReaderT ImageDB IO () }
+--   deriving (Monad, Functor, Applicative, MonadReader ImageDB, MonadIO)
+
+type RenderM a = ReaderT ImageDB IO a
+
 
 degreesToRadians :: Floating a => a -> a
 degreesToRadians degrees = degrees * (pi / 180)
 
-render :: CanvasRenderingContext2D -> Content -> IO ()
+-- render :: (MonadReader ImageDB m, MonadIO m) => CanvasRenderingContext2D -> Content -> m () -- can I use this to eliminate the liftIOs?
+render :: CanvasRenderingContext2D -> Content -> RenderM () -- this requires vast numbers of liftIO
 render ctx (Line x1 y1 x2 y2) = do
   moveTo ctx x1 y1
   lineTo ctx x2 y2
@@ -164,6 +177,7 @@ render ctx (FRegularPolygon sides radius) = do
             poly (n + 1) step
       | otherwise = closePath ctx
 
+-- TODO use arcs for this instead of polygons
 render ctx (Circle radius) = do
   render ctx (RegularPolygon 60 radius)
 
@@ -176,27 +190,41 @@ render ctx (Text font width' text) = do
   case width' of
     Just width -> renderTextWrapped ctx text width 40 --TODO automate text height property
     _          -> fillText ctx text 0 0 Nothing
+
+render ctx (Image imageName size) = do
+  imageDB <- ask
+  (ImageData img) <- liftIO $ getImage imageDB imageName
+  -- putStrLn "Render " ++ imageName ++ ": " ++ show img
+  case size of
+    Original -> do
+      x <- ((/(-2)) . realToFrac) <$> getWidth img
+      y <- ((/(-2)) . realToFrac) <$> getHeight img
+      drawImage ctx img x y
   
 render _ Empty = return ()
 
 
-renderTextWrapped :: CanvasRenderingContext2D -> String -> Float -> Float -> IO ()
+renderTextWrapped :: CanvasRenderingContext2D -> String -> Float -> Float -> RenderM ()
+-- renderTextWrapped :: (MonadReader ImageDB m, MonadIO m) => CanvasRenderingContext2D -> String -> Float -> Float -> m ()
 renderTextWrapped ctx text maxWidth lineHeight = do
   lines' <- ((wordsToLines ctx maxWidth) . words) text
   renderLines 0 lines'
   where
-    renderLines :: Float -> [String] -> IO ()
+    renderLines :: Float -> [String] -> RenderM ()
+    -- renderLines :: (MonadReader ImageDB m, MonadIO m) => Float -> [String] -> m ()
     renderLines _ []           = return ()
     renderLines y (line:lines) = do
       fillText ctx line 0 y Nothing 
       renderLines (y + lineHeight) lines
 
               
-wordsToLines :: CanvasRenderingContext2D -> Float -> [String] -> IO [String]
+wordsToLines :: CanvasRenderingContext2D -> Float -> [String] -> RenderM [String]
+-- wordsToLines :: (MonadReader ImageDB m, MonadIO m) => CanvasRenderingContext2D -> Float -> [String] -> m [String]
 wordsToLines _ _ [] = return []
 wordsToLines ctx maxWidth wordList = wordsToLinesInternal wordList ""
   where
-    wordsToLinesInternal :: [String] -> String -> IO [String]
+    wordsToLinesInternal :: [String] -> String -> RenderM [String]
+    -- wordsToLinesInternal :: (MonadReader ImageDB m, MonadIO m) => [String] -> String -> m [String]
     wordsToLinesInternal [] line           = return [line]
     wordsToLinesInternal (word:words) line = do
       let lineWord = line ++ " " ++ word

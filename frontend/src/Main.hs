@@ -1,28 +1,37 @@
+
 module Main where
 
 -- import GHCJS
 import GHCJS.DOM
 import GHCJS.DOM.Window (getInnerWidth, getInnerHeight)
--- import GHCJS.DOM.Node
--- import GHCJS.DOM.Types
+import GHCJS.DOM.Node
+import GHCJS.DOM.Types hiding (Text)
 import GHCJS.DOM.Document
 import GHCJS.DOM.Element
--- import GHCJS.DOM.EventM
--- import GHCJS.DOM.GlobalEventHandlers
--- import GHCJS.DOM.HTMLHyperlinkElementUtils
+import GHCJS.DOM.EventM
+import GHCJS.DOM.GlobalEventHandlers
+import GHCJS.DOM.HTMLHyperlinkElementUtils
 import GHCJS.DOM.HTMLCanvasElement (getContext)
 import GHCJS.DOM.CanvasRenderingContext2D
 -- import GHCJS.DOM.CanvasPath
 import GHCJS.DOM.NonElementParentNode (getElementById)
 -- import Control.Monad.IO.Class (MonadIO(..))
+import GHCJS.DOM.HTMLImageElement
 
 import Data.Monoid ((<>))
 
 import Unsafe.Coerce (unsafeCoerce)
--- import JavaScript.Web.Canvas
+import qualified JavaScript.Web.Canvas
+
+-- import Data.JSString.Internal.Type (JSString)
 
 import Content
 import Render
+import Image
+import ImagePreloader
+
+import Control.Monad.Reader
+import Control.Concurrent
 
 run :: a -> a
 run = id
@@ -59,7 +68,8 @@ fixedSizeCanvas doc x y = canvasContext doc $ attributes x y
                            \style=\"border:1px \
                            \solid #000000;\
                            \padding: 0px 0px 0px 0px;\""
-
+foreign import javascript unsafe "$r = document.getElementById('canvas').getContext('2d');"
+  getCtx :: IO JavaScript.Web.Canvas.Context
 --  -- | Create a full screen canvas
 -- fullScreenCanvas :: Document -> IO CanvasRenderingContext2D
 -- fullScreenCanvas doc = canvasContext doc attributes
@@ -77,36 +87,50 @@ drawing = Translate 400 400 $
   (FillColor (RGB 0 255 0) $ FRegularPolygon 8 100) <> -- filled, stroked regular polygon
   (StrokeColor (RGB 0 0 255) $ StrokeWidth 4 $ Path [(-50, -50), (50, -50), (-50, 50)]) <> -- coloured path
   (Translate 0 100 $ Text "22px Garamond" (Just 600) "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec placerat laoreet vestibulum. Nam pellentesque libero a urna bibendum, at pellentesque libero tincidunt. Mauris elementum neque et lacus sollicitudin blandit. Mauris ut felis sodales, viverra dui vitae, bibendum est. Sed iaculis mauris eget orci maximus rutrum ac quis urna. Aenean fermentum semper sapien vel aliquam. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Cras consectetur at eros eget tempor. Ut et ligula suscipit, cursus metus et, rutrum tortor. Praesent iaculis efficitur arcu, vitae venenatis neque convallis ac. Nulla at risus purus. Vestibulum sit amet enim condimentum, facilisis nunc ac, iaculis nunc.") <>
-  (FillColor (RGBA 0 255 255 0.5) $ Translate 0 150 $ FCircle 50)
+  (FillColor (RGBA 0 255 255 0.5) $ Translate 0 150 $ FCircle 50) <>
+  (Image "yoda" Original) 
 
 helloMain :: IO ()
 helloMain = do
   win <- currentWindowUnchecked
   doc <- currentDocumentUnchecked
-  -- body <- getBodyUnchecked doc
+  body <- getBodyUnchecked doc
 
-  -- _ <- on doc click $ do
-  --   (x, y) <- mouseClientXY
-  --   elem <- createElement doc "p"
-  --   temp <- setAttribute elem "style" "text-color:green;"
-  --   newPara <- uncheckedCastTo HTMLParagraphElement temp
-  --   text <- createTextNode doc $ "Click " ++ show (x, y)
-  --   appendChild_ newPara text
-  --   appendChild_ body newPara
+  _ <- on doc click $ do
+    (x, y) <- mouseClientXY
+    newPara <- uncheckedCastTo HTMLParagraphElement <$> createElement doc "p"
+    text <- createTextNode doc $ "Click " ++ show (x, y)
+    appendChild_ newPara text
+    appendChild_ body newPara
 
   w <- getInnerWidth win
   h <- getInnerHeight win
   ctx <- fixedSizeCanvas doc w h
-  -- let crosses = (FillColor 255 0 0 1 cross) <> (Rotate 180 (FillColor 0 0 255 1 cross)) <> (Rotate 90 (FillColor 0 255 0 1 cross))
-  -- let r = FRect 100 80
-  -- let rects = (FillColor 0 0 255 1 (StrokeWidth 5 (FCircle 100))) <> (FillColor 255 0 0 1 r) <> (Translate 30 30 (FillColor 0 255 0 1 r))
-  -- render ctx $ Translate 300 300 rects
-  -- render ctx $ Translate 100 100 $ Rotate 90 $ RegularPolygon 5 100
-  -- render ctx $ Translate 500 100 $ Rotate 45 $ Rect 50 100
-  -- render ctx $ Translate 100 300 $ FillColor 255 0 0 1 $ Text "32px Garamond"
-  --                                                         (Just 200)
-  --                                                         "The FitnessGram Pacer Test is a multi-stage aerobic capacity test designed to..." 
 
-  render ctx drawing
+  ctx' <- getCtx
+  
+  -- TODO add quick function to create filled map in one go
+  em <- emptyDB
+  imageDB <- loadImages em [("yoda", "https://upload.wikimedia.org/wikipedia/en/9/9b/Yoda_Empire_Strikes_Back.png")]
+  
+
+  -- runReaderT (render ctx drawing) imageDB
+  runReaderT (render ctx (Image "yoda" Original)) imageDB
+
+  -- (ImageData im) <- makeImageData  "https://upload.wikimedia.org/wikipedia/en/9/9b/Yoda_Empire_Strikes_Back.png"
+  -- -- flip runReaderT imageDB $ 
+  -- drawImage ctx im 100 100
+
+  img <- js_newImage
+  -- setCrossOrigin img (Just "anonymous")
+  -- setSrc img "https://upload.wikimedia.org/wikipedia/en/9/9b/Yoda_Empire_Strikes_Back.png"
+  setSrc img "egg.jpg"
+  _ <- on img load $ do
+    liftIO $ do
+      putStrLn "drawing egg"
+      drawImage ctx img 0 0
+      putStrLn "egg drawn"
+      return ()
 
   syncPoint
+
