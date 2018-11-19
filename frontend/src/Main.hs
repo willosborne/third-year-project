@@ -121,16 +121,16 @@ helloMain = do
   -- -- flip runReaderT imageDB $ 
   -- drawImage ctx im 100 100
 
-  img <- js_newImage
+  -- img <- js_newImage
   -- setCrossOrigin img (Just "anonymous")
   -- setSrc img "https://upload.wikimedia.org/wikipedia/en/9/9b/Yoda_Empire_Strikes_Back.png"
-  setSrc img "egg.jpg"
-  _ <- on img load $ do
-    liftIO $ do
-      putStrLn "drawing egg"
-      drawImage ctx img 0 0
-      putStrLn "egg drawn"
-      return ()
+  -- setSrc img "egg.jpg"
+  -- _ <- on img load $ do
+  --   liftIO $ do
+  --     putStrLn "drawing egg"
+  --     drawImage ctx img 0 0
+  --     putStrLn "egg drawn"
+  --     return ()
 
   syncPoint
 

@@ -44,3 +44,5 @@ FillColor $ StrokeColor $ Content -- fill and stroke
 **** DONE Scale
 **** DONE Change fill and line colour
 **** TODO Gradient fills
+** TODO Local image store
+Ensure images and other resources are bundled alongside the webpage and js code.

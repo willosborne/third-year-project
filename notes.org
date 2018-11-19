@@ -1,8 +1,10 @@
 * Queries 19/10/18
 ** ImageDB passed in via ReaderT - is this the best idea?
-** Eliminating vast numbers of liftIO calls with type constraints?
 ** onload functionality for each image before continuing
+Do this with an external JS function
 ** Splitting into library
+** Unit tests for framework; how to test graphical stuff?
+** USE ReaderT monad to capture fill/stroke state!
 * Queries 16/10/18
 ** How to go about choosing a type of FRP
 ** Trouble with Haskell libraries (GHCjs)
