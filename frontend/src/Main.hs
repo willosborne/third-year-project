@@ -82,13 +82,14 @@ cross :: Content
 cross = Translate (-75) (-100) $ FPolygon [(0, 0), (50, 0), (50, 50), (100, 50), (100, 100), (50, 100), (50, 200), (0, 200), (0, 100), (-50, 100), (-50, 100), (-50, 50), (0, 50)]
 
 drawing :: Content
-drawing = Translate 400 400 $
+drawing = Translate 200 200 $
+  (Image "egg" Original) <>
   (FillColor (RGB 255 0 0) $ StrokeWidth 3 $ Rotate 180 $ Scale 3 3 cross) <> -- filled, stroked path
   (FillColor (RGB 0 255 0) $ FRegularPolygon 8 100) <> -- filled, stroked regular polygon
   (StrokeColor (RGB 0 0 255) $ StrokeWidth 4 $ Path [(-50, -50), (50, -50), (-50, 50)]) <> -- coloured path
   (Translate 0 100 $ Text "22px Garamond" (Just 600) "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec placerat laoreet vestibulum. Nam pellentesque libero a urna bibendum, at pellentesque libero tincidunt. Mauris elementum neque et lacus sollicitudin blandit. Mauris ut felis sodales, viverra dui vitae, bibendum est. Sed iaculis mauris eget orci maximus rutrum ac quis urna. Aenean fermentum semper sapien vel aliquam. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Cras consectetur at eros eget tempor. Ut et ligula suscipit, cursus metus et, rutrum tortor. Praesent iaculis efficitur arcu, vitae venenatis neque convallis ac. Nulla at risus purus. Vestibulum sit amet enim condimentum, facilisis nunc ac, iaculis nunc.") <>
   (FillColor (RGBA 0 255 255 0.5) $ Translate 0 150 $ FCircle 50) <>
-  (Image "yoda" Original) 
+  (Translate 300 0 $ Image "yoda" Original) 
 
 helloMain :: IO ()
 helloMain = do
@@ -110,12 +111,13 @@ helloMain = do
   ctx' <- getCtx
   
   -- TODO add quick function to create filled map in one go
+  -- maybe >> into flip
   em <- emptyDB
-  imageDB <- loadImages em [("yoda", "https://upload.wikimedia.org/wikipedia/en/9/9b/Yoda_Empire_Strikes_Back.png")]
+  imageDB <- loadImages em [("egg", "egg.jpg"), ("yoda", "https://upload.wikimedia.org/wikipedia/en/9/9b/Yoda_Empire_Strikes_Back.png")]
   
 
-  -- runReaderT (render ctx drawing) imageDB
-  runReaderT (render ctx (Image "yoda" Original)) imageDB
+  runReaderT (render ctx drawing) imageDB
+  -- runReaderT (render ctx ((Image "egg" Original) <> (Translate 100 0 (Image "yoda" Original)))) imageDB
 
   -- (ImageData im) <- makeImageData  "https://upload.wikimedia.org/wikipedia/en/9/9b/Yoda_Empire_Strikes_Back.png"
   -- -- flip runReaderT imageDB $ 

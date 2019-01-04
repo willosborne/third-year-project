@@ -9,7 +9,7 @@ Expose index.html for user editing?
 *** DONE Design some kind of Picture/Element/Content class to store data about on-screen content
 *** TODO Make canvas resize automatically
 **** TODO Think about how to scale on-screen content 
-*** TODO Write rendering functions to wrap around Canvas [2/8]
+*** TODO Write rendering functions to wrap around Canvas [3/7]
 **** TODO Text rendering [2/3]
 ***** DONE basic text rendering w/ css fonts
 ***** DONE text wrapping
@@ -26,7 +26,7 @@ Need to expose simple system for loading these images w/o copying to build direc
 **** DONE Line rendering
 **** DONE Poly rendering
 **** TODO [#C] Spline rendering?
-**** TODO [#A] Filled shapes 
+**** DONE [#A] Filled shapes 
 Simply define filled versions of all primitives?
 Or define a FillStyle control object?
 
@@ -44,5 +44,6 @@ FillColor $ StrokeColor $ Content -- fill and stroke
 **** DONE Scale
 **** DONE Change fill and line colour
 **** TODO Gradient fills
+** TODO move render functionality to typeclass to allow for extensibility
 ** TODO Local image store
 Ensure images and other resources are bundled alongside the webpage and js code.

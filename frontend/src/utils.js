@@ -1,19 +1,20 @@
 function preloadImages(urls, callback) {
-  var images = {};
+  var images = [];
   var loadedImages = 0;
   var imgCount = urls.length;
 
   if (imgCount == 0)
     callback([]);
   
-  for (var url in urls) {
-    images[url] = new Image();
-    images[url].onload = function() {
+  for (var i = 0; i < urls.length; i++) {
+    images.push(new Image());
+    images[i].onload = function() {
       if (++loadedImages >= imgCount) {
         callback(images);
       }
     }
-    images[url].src = url;
+    images[i].src = urls[i];
+
   }
 }
 

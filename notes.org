@@ -4,6 +4,7 @@
 Do this with an external JS function
 ** Splitting into library
 ** Unit tests for framework; how to test graphical stuff?
+Will probably want to test functions operating on eDSL/AST to ensure they generate the correct structures
 ** USE ReaderT monad to capture fill/stroke state!
 * Queries 16/10/18
 ** How to go about choosing a type of FRP
