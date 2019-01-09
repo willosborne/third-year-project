@@ -19,6 +19,7 @@ import GHCJS.DOM.NonElementParentNode (getElementById)
 import GHCJS.DOM.HTMLImageElement
 
 import Data.Monoid ((<>))
+import Data.IORef
 
 import Unsafe.Coerce (unsafeCoerce)
 import qualified JavaScript.Web.Canvas
@@ -29,9 +30,12 @@ import Content
 import Render
 import Image
 import ImagePreloader
+import Animation
+import GHCJSTime
 
 import Control.Monad.Reader
 import Control.Concurrent
+import Control.Concurrent.MVar (newMVar, modifyMVar, modifyMVar_)
 
 run :: a -> a
 run = id
@@ -91,14 +95,65 @@ drawing = Translate 200 200 $
   (FillColor (RGBA 0 255 255 0.5) $ Translate 0 150 $ FCircle 50) <>
   (Translate 300 0 $ Image "yoda" Original) 
 
+
+testTranslate :: Double -> Content -> Content
+testTranslate x c = Translate x 0 c
+
+ball :: Content
+ball = (FillColor (RGB 255 0 0) $ StrokeWidth 2 $ FCircle 100)
+    <> (Translate 0 100 $ Image "egg" Original)
+
+
+-- shine pointed me towards this animation system and MVars.
+-- depends on time (crucially, not on user input)
+animate :: CanvasRenderingContext2D
+        -- -> IORef Int -- time ref
+        -> ImageDB
+        -> (Double -> IO Content)
+        -> IO ()
+animate ctx imageDB f = do
+  -- timeRef <- initTime
+  animStartTime <- getTime
+  putStrLn $ show animStartTime
+
+  let loop = do
+        startTime <- getTime
+        -- dtStart <- updateTime timeRef
+
+        clearRect ctx 0 0 6000 4000
+        setTransform ctx 1 0 0 1 0 0 -- reset transforms (and accumulated errors!).
+
+        c <- f $ startTime - animStartTime
+        runReaderT (render ctx c) imageDB
+
+        -- dtEnd <- updateTime timeRef
+        endTime <- getTime
+
+        let diff = (realToFrac (1/60)) - (endTime - startTime)
+        when (diff > 0) $ do
+          threadDelay $ floor $ diff * 1000000
+        loop
+  
+  loop
+      
 helloMain :: IO ()
 helloMain = do
   win <- currentWindowUnchecked
   doc <- currentDocumentUnchecked
   body <- getBodyUnchecked doc
 
+  timeRef <- initTime
+
+  -- doc :: (IsEventTarget t) => t
+  -- click :: (IsEventTarget t, IsEvent e) EventName t e
+  -- action is EventM t e ()
+  -- returns IO (IO ()) - this removes the listener from the element
+  -- make a listener
+
+  -- EventM e t a = ReaderT (t, e) IO a
   _ <- on doc click $ do
     (x, y) <- mouseClientXY
+    liftIO $ putStrLn $ "Click: " ++ show (x, y)
     newPara <- uncheckedCastTo HTMLParagraphElement <$> createElement doc "p"
     text <- createTextNode doc $ "Click " ++ show (x, y)
     appendChild_ newPara text
@@ -108,31 +163,25 @@ helloMain = do
   h <- getInnerHeight win
   ctx <- fixedSizeCanvas doc w h
 
-  ctx' <- getCtx
+  -- ctx' <- getCtx
   
   -- TODO add quick function to create filled map in one go
   -- maybe >> into flip
   em <- emptyDB
+  putStrLn "Stalling till images have loaded..."
+  _ <- updateTime timeRef
   imageDB <- loadImages em [("egg", "egg.jpg"), ("yoda", "https://upload.wikimedia.org/wikipedia/en/9/9b/Yoda_Empire_Strikes_Back.png")]
+  updateTime timeRef >>= (\t -> putStrLn ("Loaded. Time: " ++ (show t) ++ "ms."))
   
 
-  runReaderT (render ctx drawing) imageDB
+  -- runReaderT (render ctx drawing) imageDB
+
+  animate ctx imageDB $ \t -> return $ Translate (t* 100) 200 $ Scale ((sin t)) ((sin (t * 2)) * 0.5 + 1) $ Image "yoda" Original 
+
+  
+  -- loop timeRef ctx 0 imageDB
   -- runReaderT (render ctx ((Image "egg" Original) <> (Translate 100 0 (Image "yoda" Original)))) imageDB
 
-  -- (ImageData im) <- makeImageData  "https://upload.wikimedia.org/wikipedia/en/9/9b/Yoda_Empire_Strikes_Back.png"
-  -- -- flip runReaderT imageDB $ 
-  -- drawImage ctx im 100 100
-
-  -- img <- js_newImage
-  -- setCrossOrigin img (Just "anonymous")
-  -- setSrc img "https://upload.wikimedia.org/wikipedia/en/9/9b/Yoda_Empire_Strikes_Back.png"
-  -- setSrc img "egg.jpg"
-  -- _ <- on img load $ do
-  --   liftIO $ do
-  --     putStrLn "drawing egg"
-  --     drawImage ctx img 0 0
-  --     putStrLn "egg drawn"
-  --     return ()
 
   syncPoint
 

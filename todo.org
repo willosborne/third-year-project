@@ -16,11 +16,11 @@ Expose index.html for user editing?
 https://www.html5canvastutorials.com/tutorials/html5-canvas-wrap-text-tutorial/
 ***** TODO bold, italic (et al) rendering
 This will be very difficult.
-**** TODO [#A] Image rendering [0/5]
-***** TODO Image pre-loader
-***** TODO Content classes for image
+**** TODO [#A] Image rendering [3/5]
+***** DONE Image pre-loader
+***** DONE Content classes for image
 ***** TODO Ability to scale and crop image
-***** TODO Load from external URL
+***** DONE Load from external URL
 ***** TODO Load from local file
 Need to expose simple system for loading these images w/o copying to build directory
 **** DONE Line rendering
@@ -44,6 +44,38 @@ FillColor $ StrokeColor $ Content -- fill and stroke
 **** DONE Scale
 **** DONE Change fill and line colour
 **** TODO Gradient fills
+** TODO Event systtem
+*** TODO Event type to store incoming events
+*** TODO State type to store state of elements 
+Each Content is animated as a whole
+*** TODO Animation functions
+https://github.com/schell/varying this looks great
+Animation functions are pure. 
+Take control value from 0 to 1
+
+They animate a property of a Content
+Takes AnimControl, Content and a property function
+
+AnimControl :: Double - need a better name
+
+these functions simply map one AnimControl onto another.
+no function -> linear
+
+lerp :: AnimControl -> AnimControl
+lerp = id
+sine :: AnimControl -> AnimControl
+sine = math.sin
+
+map one double onto another
+lerp :: Double -> Double -> AnimControl -> Double
+
+cat :: Content
+cat = Image "cat" Original
+
+AnimFunc :: AnimControl -> Content -> Content -> Content
+slide t content property = 
+*** IDEAS
+Time varying Contents!
 ** TODO move render functionality to typeclass to allow for extensibility
 ** TODO Local image store
 Ensure images and other resources are bundled alongside the webpage and js code.
