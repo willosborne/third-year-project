@@ -28,6 +28,7 @@ executable frontend
                      , Signal
                      , Animation
                      , Slide
+                     , Input
                      , GHCJSTime
   js-sources:          src/utils.js
   -- other-extensions:    
