@@ -8,6 +8,8 @@ import GHCJS.DOM.EventM
 import GHCJS.DOM.GlobalEventHandlers
 import GHCJS.DOM.CanvasRenderingContext2D
 
+import Web.KeyCode (keyCodeLookup)
+
 import Render
 import ImagePreloader
 import GHCJSTime
@@ -21,7 +23,6 @@ import Data.Foldable (foldrM)
 import Data.Maybe (fromMaybe)
   
 type AnimControl = Double
-
 
 -- easing function
 lerp :: Double -> Double -> AnimControl -> Double
@@ -56,20 +57,17 @@ runProgram ctx doc imageDB initialState renderState processEvent processTime = d
   -- register event handlers
   _ <- on doc mouseDown $ do
     Just button <- toMouseButton <$> mouseButton
-    -- liftIO $ putStrLn $ show button
-    -- insert MouseClick event 
     (x, y) <- mouseClientXY
-    let e = (EventMouseClick x y button)
-    -- liftIO $ putStrLn $ show e
     
-    -- modifyMVar_ :: MVar a -> (a -> IO a) -> IO ()
-    -- eventMVar :: MVar [UserEvent]
-    -- ((EventMouseClick x y button) :) :: [UserEvent] -> [UserEvent]
-    -- fmap return ((Event..) :)
-    -- fmap (a -> IO a) ([a] -> [a])
-    liftIO $ modifyMVar_ eventMVar $ fmap return (EventMouseClick x y button :)
-    -- ev <- liftIO $  readMVar eventMVar
-    -- liftIO $ putStrLn $ show ev
+    liftIO $ modifyMVar_ eventMVar $ fmap return (EventMouseDown x y button :)
+  _ <- on doc keyDown $ do
+    key <- keyCodeLookup . fromIntegral <$> uiKeyCode
+    
+    liftIO $ modifyMVar_ eventMVar $ fmap return (EventKeyDown key :)
+  _ <- on doc keyUp $ do
+    key <- keyCodeLookup . fromIntegral <$> uiKeyCode
+    
+    liftIO $ modifyMVar_ eventMVar $ fmap return (EventKeyUp key :)
 
   let loop stateIn = do
         -- putStrLn "loop start"
@@ -78,6 +76,7 @@ runProgram ctx doc imageDB initialState renderState processEvent processTime = d
         clearRect ctx 0 0 6000 4000
         setTransform ctx 1 0 0 1 0 0 
 
+        -- i don't know why this doesn't work!
         -- events <- fmap (fromMaybe []) $ tryTakeMVar eventMVar
         events <- modifyMVar eventMVar $ \xs -> return ([], xs)
         
@@ -87,21 +86,20 @@ runProgram ctx doc imageDB initialState renderState processEvent processTime = d
         inputState <- foldrM processEvent stateIn events
         newState <- processTime (startTime - initialTime) inputState
 
-        -- c <- renderState newState
-        c <- renderState stateIn
+        c <- renderState newState
         runReaderT (render ctx c) imageDB
 
-        -- dtEnd <- updateTime timeRef
         endTime <- getTime
 
         let diff = (realToFrac (1/60)) - (endTime - startTime)
-        -- putStrLn $ show (floor $ diff * 1000000)
         when (diff > 0) $ do
           threadDelay $ floor $ diff * 1000000
 
         loop newState
         
   loop initialState
+
+
 
 -- shine pointed me towards this animation system and MVars.
 -- depends on time (crucially, not on user input)

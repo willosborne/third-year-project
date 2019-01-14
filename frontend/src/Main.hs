@@ -1,23 +1,24 @@
-
 module Main where
 
 -- import GHCJS
 import GHCJS.DOM
 import GHCJS.DOM.Window (getInnerWidth, getInnerHeight)
-import GHCJS.DOM.Node
+-- import GHCJS.DOM.Node
 import GHCJS.DOM.Types hiding (Text)
 import GHCJS.DOM.Document
 import GHCJS.DOM.Element
-import GHCJS.DOM.EventM
-import GHCJS.DOM.GlobalEventHandlers
+-- import GHCJS.DOM.EventM
+-- import GHCJS.DOM.GlobalEventHandlers
 import GHCJS.DOM.HTMLCanvasElement (getContext)
-import GHCJS.DOM.CanvasRenderingContext2D
+-- import GHCJS.DOM.CanvasRenderingContext2D
 -- import GHCJS.DOM.CanvasPath
 import GHCJS.DOM.NonElementParentNode (getElementById)
 -- import Control.Monad.IO.Class (MonadIO(..))
 
+import Web.KeyCode (Key(..))
+
 import Data.Monoid ((<>))
-import Data.IORef
+-- import Data.IORef
 
 import Unsafe.Coerce (unsafeCoerce)
 import qualified JavaScript.Web.Canvas
@@ -25,16 +26,16 @@ import qualified JavaScript.Web.Canvas
 -- import Data.JSString.Internal.Type (JSString)
 
 import Content
-import Render
+-- import Render
 import Image
 import ImagePreloader
 import Animation
 import GHCJSTime
 import Input
 
-import Control.Monad.Reader
-import Control.Concurrent
-import Control.Concurrent.MVar (newMVar, modifyMVar, modifyMVar_)
+-- import Control.Monad.Reader
+-- import Control.Concurrent
+-- import Control.Concurrent.MVar (newMVar, modifyMVar, modifyMVar_)
 
 run :: a -> a
 run = id
@@ -71,6 +72,7 @@ fixedSizeCanvas doc x y = canvasContext doc $ attributes x y
                            \style=\"border:1px \
                            \solid #000000;\
                            \padding: 0px 0px 0px 0px;\""
+
 foreign import javascript unsafe "$r = document.getElementById('canvas').getContext('2d');"
   getCtx :: IO JavaScript.Web.Canvas.Context
 --  -- | Create a full screen canvas
@@ -144,18 +146,20 @@ helloMain = do
   -- runReaderT (render ctx drawing) imageDB
 
   -- animate ctx imageDB $ \t -> return $ Translate (t* 100) 200 $ Scale ((sin t)) ((sin (t * 2)) * 0.5 + 1) $ Image "yoda" Original 
-  let initialState = (0.0, 1.0)
-      -- renderState False = return Empty
-      renderState (t, _) = let k = (sin (t * 1.5)) + 1
+
+  -- simple runProgram example with (time, speed) as the state
+  let initialState = (0.0, 1.0, 0.0)
+      renderState (t, _, angle) = let k = (sin (t * 1.5)) + 1
                       in
-                        return $ Translate 600 200 $ Scale k k $ FillColor (RGB 255 0 0) $ Image "yoda" Original
-                        
-     processEvent ev (t, speed) = do
+                        return $ Translate 600 300 $ Scale k k $ Rotate angle $ FillColor (RGB 255 0 0) $ Image "yoda" Original
+      processEvent ev (t, speed, angle) = do
         case ev of
-          EventMouseClick _ _ ButtonLeft -> return (t, speed + 0.1)
-          EventMouseClick _ _ ButtonRight -> return (t, speed - 0.1)
-          _ -> return (t, speed)
-      processTime t (_, speed) = return (t * speed, speed)
+          EventMouseDown _ _ ButtonLeft -> return (t, speed + 0.1, angle)
+          EventMouseDown _ _ ButtonRight -> return (t, speed - 0.1, angle)
+          EventKeyDown ArrowRight -> return (t, speed, angle + 10.0)
+          EventKeyDown ArrowLeft -> return (t, speed, angle - 10.0)
+          _ -> return (t, speed, angle)
+      processTime t (_, speed, angle) = return (t * speed, speed, angle)
       
   runProgram ctx doc imageDB initialState renderState processEvent processTime
 

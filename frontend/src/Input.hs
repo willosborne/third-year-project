@@ -1,6 +1,7 @@
 module Input where
 
 import Data.Word (Word)
+import Web.KeyCode (Key)
 
 data MouseButton = ButtonLeft | ButtonRight | ButtonMiddle deriving (Eq, Show)
 
@@ -14,10 +15,10 @@ toMouseButton w = case w of
 data UserEvent =
     EventNextSlide
   | EventPreviousSlide
-  | EventMouseClick Int Int MouseButton
+  | EventMouseDown Int Int MouseButton
   | EventMouseMove Int Int
-  | EventKeyDown Int
-  | EventKeyUp Int
+  | EventKeyDown Key
+  | EventKeyUp Key
   deriving (Show, Eq)
 
   

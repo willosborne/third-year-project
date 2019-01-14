@@ -13,9 +13,9 @@ maintainer:          willfosborne@gmail.com
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
-data-files:          ../../static/**/*.jpg
-                   , ../../static/**/*.png
-                   , ../../static/**/*.gif
+-- data-files:          ../../static/**/*.jpg
+--                    , ../../static/**/*.png
+--                    , ../../static/**/*.gif
 
 executable frontend
   main-is:             Main.hs
@@ -25,11 +25,11 @@ executable frontend
                      , Image
                      , ImagePreloader
                      , Paths_frontend
-                     , Signal
                      , Animation
                      , Slide
                      , Input
                      , GHCJSTime
+                     , Reactive.Types
   js-sources:          src/utils.js
   -- other-extensions:    
   build-depends:       base >=4.9 && <4.12
@@ -43,5 +43,6 @@ executable frontend
                      , ghcjs-ffiqq
                      , containers
                      , time
+                     , keycode
   hs-source-dirs:      src
   default-language:    Haskell2010
