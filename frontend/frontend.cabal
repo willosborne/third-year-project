@@ -30,6 +30,7 @@ executable frontend
                      , Input
                      , GHCJSTime
                      , Reactive.Types
+                     , Reactive.FRPSimple
   js-sources:          src/utils.js
   -- other-extensions:    
   build-depends:       base >=4.9 && <4.12

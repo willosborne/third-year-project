@@ -2,13 +2,13 @@ module Animation where
 
 import Content
 
-import GHCJS.DOM.Types hiding (Text)
+import GHCJS.DOM.Types hiding (Text, Event)
 import GHCJS.DOM.Document()
 import GHCJS.DOM.EventM
 import GHCJS.DOM.GlobalEventHandlers
 import GHCJS.DOM.CanvasRenderingContext2D
 
-import Web.KeyCode (keyCodeLookup)
+import Web.KeyCode (keyCodeLookup, Key(..))
 
 import Render
 import ImagePreloader
@@ -21,6 +21,10 @@ import Control.Concurrent.MVar (newMVar, modifyMVar, modifyMVar_)
   
 import Data.Foldable (foldrM)
 import Data.Maybe (fromMaybe)
+
+-- import Reactive.Types
+import Reactive.FRPSimple
+
   
 type AnimControl = Double
 
@@ -39,6 +43,93 @@ transition modifier v0 v1 ease t c = modifier v c
   where
     v = lerp v0 v1 $ ease t
 
+-- data Inputs = Inputs {
+--   userEvents :: Event UserEvent,
+--   time :: Event Time
+-- }
+
+-- angleChange :: UserEvent -> Maybe (Double -> Double)
+-- angleChange (EventKeyDown key) = case key of
+--   ArrowLeft  -> Just $ \a -> a - 10
+--   ArrowRight -> Just $ \a -> a + 10
+--   _          -> Nothing
+-- angleChange _ = Nothing
+
+-- angleB :: Inputs -> Behaviour Double
+
+posChange :: Fractional a => UserEvent -> Maybe ((a, a) -> (a, a))
+posChange (EventKeyDown key) = case key of
+  ArrowLeft  -> Just $ \(x, y) -> (x - 10, y)
+  ArrowRight -> Just $ \(x, y) -> (x + 10, y)
+  _          -> Nothing
+posChange _ = Nothing
+
+-- posB :: Fractional a => Inputs -> Behaviour (a, a)
+-- posB = accumB (0, 0) . filterJust . fmap posChange . userEvents
+
+-- createContent :: Double -> Content
+-- createContent angle = Translate 400 300 $ Rotate angle $ Image "yoda" Original
+
+-- program :: Inputs -> Behaviour Content
+-- program inputs = createContent <$> posB inputs
+  
+
+-- type RegisterEventListener
+
+-- runProgramReactive :: (IsEventTarget eventTarget, IsDocument eventTarget)
+--                    => CanvasRenderingContext2D
+--                    -> eventTarget
+--                    -> ImageDB
+--                    -> (Inputs -> Behaviour Content)
+--                    -> IO ()
+-- runProgramReactive ctx doc imageDB renderB = do
+--   initialTime <- getTime
+--   eventMVar <- newMVar [] -- mutable list to accumulate events as they occur
+
+--   -- register event handlers
+--   _ <- on doc mouseDown $ do
+--     Just button <- toMouseButton <$> mouseButton
+--     (x, y) <- mouseClientXY
+    
+--     liftIO $ modifyMVar_ eventMVar $ fmap return (EventMouseDown x y button :)
+--   _ <- on doc keyDown $ do
+--     key <- keyCodeLookup . fromIntegral <$> uiKeyCode
+    
+--     liftIO $ modifyMVar_ eventMVar $ fmap return (EventKeyDown key :)
+--   _ <- on doc keyUp $ do
+--     key <- keyCodeLookup . fromIntegral <$> uiKeyCode
+    
+--     liftIO $ modifyMVar_ eventMVar $ fmap return (EventKeyUp key :)
+
+--   let loop = do
+--         -- putStrLn "loop start"
+--         startTime <- getTime
+
+--         clearRect ctx 0 0 6000 4000
+--         setTransform ctx 1 0 0 1 0 0 
+
+--         -- i don't know why this doesn't work!
+--         -- events <- fmap (fromMaybe []) $ tryTakeMVar eventMVar
+--         events <- modifyMVar eventMVar $ \xs -> return ([], xs)
+        
+--         -- [event], state, (event -> state -> IO state)
+--         -- mapM_ (putStrLn . show) events
+--         -- mapM_ ((flip processEvent) stateIn) (fromMaybe [] events)
+--         -- inputState <- foldrM processEvent stateIn events
+--         -- newState <- processTime (startTime - initialTime) inputState
+
+--         -- c <- renderState newState
+--         runReaderT (render ctx c) imageDB
+
+--         endTime <- getTime
+
+--         let diff = (realToFrac (1/60)) - (endTime - startTime)
+--         when (diff > 0) $ do
+--           threadDelay $ floor $ diff * 1000000
+
+--         loop 
+--   loop 
+  
 
 -- simple version based on Shine
 runProgram :: (IsEventTarget eventTarget, IsDocument eventTarget) 
