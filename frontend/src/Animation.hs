@@ -20,10 +20,11 @@ import Control.Concurrent
 import Control.Concurrent.MVar (newMVar, modifyMVar, modifyMVar_)
   
 import Data.Foldable (foldrM)
-import Data.Maybe (fromMaybe)
+-- import Data.Maybe (fromMaybe)
 
 -- import Reactive.Types
 import Reactive.FRPSimple
+-- import Reactive.React
 
   
 type AnimControl = Double
@@ -42,6 +43,71 @@ transition :: (Double -> Content -> Content) -> Double -> Double -> (AnimControl
 transition modifier v0 v1 ease t c = modifier v c
   where
     v = lerp v0 v1 $ ease t
+
+
+animateReact :: (IsEventTarget eventTarget, IsDocument eventTarget)
+             => CanvasRenderingContext2D
+             -> eventTarget
+             -> ImageDB
+             -- -> (Double -> IO Content)
+             -> IO ()
+animateReact ctx doc imageDB = do
+  animStartTime <- getTime
+
+  -- (click, sendClick) <- newEvent
+  (a, sendA) <- newEvent
+  bA <- hold (0 :: Int) a
+
+  bSumA <- accumB 0 ((+) <$> a)
+  sumA <- accumE 0 ((+) <$> a)
+
+  -- unlistenSum <- listenToBehaviour aSum (\new -> liftIO (putStrLn ("A sum is now: " ++ (show new))))
+  listenToBehaviour bSumA (\new -> liftIO (putStrLn ("bSumA is now: " ++ (show new))))
+  -- NOTE: passing values through works for events, but not behaviours. Suspect either listenToBehaviour or hold.
+  listenToBehaviour bA (\new -> liftIO (putStrLn ("bA is now: " ++ (show new))))
+
+  listen a (\new -> liftIO (putStrLn ("a is now: " ++ (show new))))
+  -- NOTE: accum doesn't seem to stay registered for either events or behaviours. Could be in accumE.
+  listen sumA (\new -> liftIO (putStrLn ("sumA is now: " ++ (show new))))
+
+  -- forkIO $ forever (threadDelay 1000000000) >> unlistenSum
+
+  -- forever $ do
+  --   threadDelay 2000000
+  --   sync $ sendA 
+
+  let loop x = do
+        threadDelay 2000000
+        sync $ sendA x
+        loop (x + 10)
+  loop 10
+  
+  -- _ <- on doc mouseDown $ do
+  --   Just button <- toMouseButton <$> mouseButton
+  --   -- let v = case button of
+  --   --       ButtonLeft -> 1
+  --   --       ButtonMiddle -> 2
+  --   --       ButtonRight -> 3
+  --   -- liftIO $ sync $ sendA v
+  --   (x, y) <- mouseClientXY
+  --   liftIO $ putStrLn (show x)
+  --   liftIO $ sync $ sendA x
+
+  -- let loop = do
+  --       startTime <- getTime
+
+  --       clearRect ctx 0 0 6000 4000
+  --       setTransform ctx 1 0 0 1 0 0 
+
+  --       -- runReaderT (render ctx c) imageDB
+
+  --       endTime <- getTime
+
+  --       let diff = (realToFrac (1/60)) - (endTime - startTime)
+  --       when (diff > 0) $ do
+  --         threadDelay $ floor $ diff * 1000000
+  --       loop
+  -- loop
 
 -- data Inputs = Inputs {
 --   userEvents :: Event UserEvent,
@@ -200,12 +266,10 @@ animate :: CanvasRenderingContext2D
         -> (Double -> IO Content)
         -> IO ()
 animate ctx imageDB f = do
-  -- timeRef <- initTime
   animStartTime <- getTime
 
   let loop = do
         startTime <- getTime
-        -- dtStart <- updateTime timeRef
 
         clearRect ctx 0 0 6000 4000
         setTransform ctx 1 0 0 1 0 0 
@@ -213,12 +277,10 @@ animate ctx imageDB f = do
         c <- f $ startTime - animStartTime
         runReaderT (render ctx c) imageDB
 
-        -- dtEnd <- updateTime timeRef
         endTime <- getTime
 
         let diff = (realToFrac (1/60)) - (endTime - startTime)
         when (diff > 0) $ do
           threadDelay $ floor $ diff * 1000000
         loop
-  
   loop

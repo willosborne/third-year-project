@@ -1,3 +1,35 @@
+-- module Main where
+
+-- import Control.Applicative
+
+-- import Control.Concurrent
+-- import Control.Monad.Trans
+-- import Control.Monad
+
+-- import Data.Monoid
+
+-- import Reactive.FRPSimple
+
+-- main :: IO ()
+-- main = do (a, sendA) <- newEvent
+--           (b, sendB) <- newEvent
+--           ba <- hold (0 :: Int) a
+--           bb <- hold (0 :: Int) b
+
+--           let bab = (+) <$> ba <*> bb
+
+--           bsum <- accumB 0 (((+) <$> a) <> ((+) <$> b))
+
+--           listenToBehaviour bab (\new -> liftIO (putStrLn ("Value is now " ++ show new)))
+--           listenToBehaviour bsum (\new -> liftIO (putStrLn ("Sum is now " ++ show new)))
+--           forever $ do x <- getLine
+--                        sync $ case x of
+--                                 ('a':xs) -> sendA (read xs)
+--                                 ('b':xs) -> sendB (read xs)
+--                                 _ -> return ()
+
+
+
 module Main where
 
 -- import GHCJS
@@ -34,7 +66,7 @@ import GHCJSTime
 import Input
 
 -- import Control.Monad.Reader
--- import Control.Concurrent
+import Control.Concurrent
 -- import Control.Concurrent.MVar (newMVar, modifyMVar, modifyMVar_)
 
 run :: a -> a
@@ -113,6 +145,11 @@ helloMain = do
 
   timeRef <- initTime
 
+
+  -- forkIO $ do
+  --   threadDelay 5000000
+  --   putStrLn "Yeet delayed"
+
   -- doc :: (IsEventTarget t) => t
   -- click :: (IsEventTarget t, IsEvent e) EventName t e
   -- action is EventM t e ()
@@ -148,23 +185,25 @@ helloMain = do
   -- animate ctx imageDB $ \t -> return $ Translate (t* 100) 200 $ Scale ((sin t)) ((sin (t * 2)) * 0.5 + 1) $ Image "yoda" Original 
 
   -- simple runProgram example with (time, speed) as the state
-  let initialState = (0.0, 1.0, 0.0)
-      renderState (t, _, angle) = let k = (sin (t * 1.5)) + 1
-                      in
-                        return $ Translate 600 300 $ Scale k k $ Rotate angle $ FillColor (RGB 255 0 0) $ Image "yoda" Original
-      processEvent ev (t, speed, angle) = do
-        case ev of
-          EventMouseDown _ _ ButtonLeft -> return (t, speed + 0.1, angle)
-          EventMouseDown _ _ ButtonRight -> return (t, speed - 0.1, angle)
-          EventKeyDown ArrowRight -> return (t, speed, angle + 10.0)
-          EventKeyDown ArrowLeft -> return (t, speed, angle - 10.0)
-          _ -> return (t, speed, angle)
-      processTime t (_, speed, angle) = return (t * speed, speed, angle)
+  -- let initialState = (0.0, 1.0, 0.0)
+  --     renderState (t, _, angle) = let k = (sin (t * 1.5)) + 1
+  --                     in
+  --                       return $ Translate 600 300 $ Scale k k $ Rotate angle $ FillColor (RGB 255 0 0) $ Image "yoda" Original
+  --     processEvent ev (t, speed, angle) = do
+  --       case ev of
+  --         EventMouseDown _ _ ButtonLeft -> return (t, speed + 0.1, angle)
+  --         EventMouseDown _ _ ButtonRight -> return (t, speed - 0.1, angle)
+  --         EventKeyDown ArrowRight -> return (t, speed, angle + 10.0)
+  --         EventKeyDown ArrowLeft -> return (t, speed, angle - 10.0)
+  --         _ -> return (t, speed, angle)
+  --     processTime t (_, speed, angle) = return (t * speed, speed, angle)
       
-  runProgram ctx doc imageDB initialState renderState processEvent processTime
+  -- runProgram ctx doc imageDB initialState renderState processEvent processTime
+
+  animateReact ctx doc imageDB
 
   -- runReaderT (render ctx ((Image "egg" Original) <> (Translate 100 0 (Image "yoda" Original)))) imageDB
 
 
-  syncPoint
+  -- syncPoint
 

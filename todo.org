@@ -76,6 +76,11 @@ AnimFunc :: AnimControl -> Content -> Content -> Content
 slide t content property = 
 *** IDEAS
 Time varying Contents!
+*** Problems with event system
+*PROBLEM*: the finalizer is called much earlier than it should be causing the event to unregister when it shouldn't.
+Weak pointers in threaded Haskell (and GHCJS) are the problem
+
+Events do not have the value passing issue; may be a problem in the hold function
 ** TODO move render functionality to typeclass to allow for extensibility
 ** TODO Local image store
 Ensure images and other resources are bundled alongside the webpage and js code.

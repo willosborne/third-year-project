@@ -132,11 +132,14 @@ listen :: Event a -> (a -> Moment ()) -> IO (IO ())
 listen = eventRegisterListener
 
 
+-- NOTE: querying an Event is just fine, but not a behaviour. Check out this funciton.
 listenToBehaviour :: Behaviour a -> (a -> Moment ()) -> IO (IO ())
 listenToBehaviour b handle = do
   sync $ do
     initial <- sample b
     handle initial
+  -- listen (behaviourUpdates b) (\() -> let handle' = sync (sample b >>= handle)
+  --                                     in tell ([],[handle']))
   let handle' = sync (sample b >>= handle)
   listen (behaviourUpdates b) (\() -> tell ([], [handle']))
 
@@ -149,10 +152,14 @@ accumE initial updaters = do
   (registerListener, propagateListeners) <- newEventRegistration
   let event = Event registerListener
   unregisterEventListener <- eventRegisterListener updaters $ \updater -> do
+    -- liftIO (modifyIORef cell updater)
+    -- cellValue <- liftIO (readIORef cell)
+    -- propagateListeners cellValue
     cellValue <- liftIO (modifyIORef cell updater >> readIORef cell)
     propagateListeners cellValue
     
-  addFinalizer event unregisterEventListener
+  -- NOTE: this is being called earlier than it should. The problem relates to GHCJS and weak pointers.
+  -- addFinalizer event unregisterEventListener
   return event
 
 accumB :: a -> Event (a -> a) -> React (Behaviour a)
