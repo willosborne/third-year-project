@@ -61,14 +61,11 @@ animateReact ctx doc imageDB = do
   bSumA <- accumB 0 ((+) <$> a)
   sumA <- accumE 0 ((+) <$> a)
 
-  -- unlistenSum <- listenToBehaviour aSum (\new -> liftIO (putStrLn ("A sum is now: " ++ (show new))))
-  listenToBehaviour bSumA (\new -> liftIO (putStrLn ("bSumA is now: " ++ (show new))))
-  -- NOTE: passing values through works for events, but not behaviours. Suspect either listenToBehaviour or hold.
-  listenToBehaviour bA (\new -> liftIO (putStrLn ("bA is now: " ++ (show new))))
-
   listen a (\new -> liftIO (putStrLn ("a is now: " ++ (show new))))
-  -- NOTE: accum doesn't seem to stay registered for either events or behaviours. Could be in accumE.
+  listenToBehaviour bA (\new -> liftIO (putStrLn ("bA is now: " ++ (show new))))
   listen sumA (\new -> liftIO (putStrLn ("sumA is now: " ++ (show new))))
+  listenToBehaviour bSumA (\new -> liftIO (putStrLn ("bSumA is now: " ++ (show new))))
+
 
   -- forkIO $ forever (threadDelay 1000000000) >> unlistenSum
 

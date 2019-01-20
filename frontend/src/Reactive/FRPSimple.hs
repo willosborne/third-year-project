@@ -115,7 +115,7 @@ hold initial updates = do
                             , behaviourGetValue = liftIO (readIORef cell) }
   -- register listener. instead of directly writing, we add the write operation to the enclosed list of actions
   unregisterUpdates <- eventRegisterListener updates (\x -> tell ([writeIORef cell x], []))
-  addFinalizer behaviour unregisterUpdates -- use weak pointers to run the IO action (unregisterUpdates) when behaviour is cleaned up
+  -- addFinalizer behaviour unregisterUpdates -- use weak pointers to run the IO action (unregisterUpdates) when behaviour is cleaned up
   return behaviour
 
 -- run a Moment inside IO
@@ -159,7 +159,7 @@ accumE initial updaters = do
     propagateListeners cellValue
     
   -- NOTE: this is being called earlier than it should. The problem relates to GHCJS and weak pointers.
-  -- addFinalizer event unregisterEventListener
+  -- addFinalizer event $ putStrLn "Event GC'd!" >> unregisterEventListener
   return event
 
 accumB :: a -> Event (a -> a) -> React (Behaviour a)
