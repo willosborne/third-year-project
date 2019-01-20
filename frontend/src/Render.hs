@@ -26,6 +26,8 @@ import           Control.Monad.Reader
 
 type RenderM a = ReaderT ImageDB IO a
 
+renderContent :: CanvasRenderingContext2D -> Content -> ImageDB -> IO ()
+renderContent ctx content db = runReaderT (render ctx content) db
 
 degreesToRadians :: Floating a => a -> a
 degreesToRadians degrees = degrees * (pi / 180)

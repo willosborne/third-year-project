@@ -44,82 +44,6 @@ transition modifier v0 v1 ease t c = modifier v c
   where
     v = lerp v0 v1 $ ease t
 
-
-animateReact :: (IsEventTarget eventTarget, IsDocument eventTarget)
-             => CanvasRenderingContext2D
-             -> eventTarget
-             -> ImageDB
-             -- -> (Double -> IO Content)
-             -> IO ()
-animateReact ctx doc imageDB = do
-  animStartTime <- getTime
-
-  -- (click, sendClick) <- newEvent
-  (a, sendA) <- newEvent
-  bA <- hold (0 :: Int) a
-
-  bSumA <- accumB 0 ((+) <$> a)
-  sumA <- accumE 0 ((+) <$> a)
-
-  listen a (\new -> liftIO (putStrLn ("a is now: " ++ (show new))))
-  listenToBehaviour bA (\new -> liftIO (putStrLn ("bA is now: " ++ (show new))))
-  listen sumA (\new -> liftIO (putStrLn ("sumA is now: " ++ (show new))))
-  listenToBehaviour bSumA (\new -> liftIO (putStrLn ("bSumA is now: " ++ (show new))))
-
-
-  -- forkIO $ forever (threadDelay 1000000000) >> unlistenSum
-
-  -- forever $ do
-  --   threadDelay 2000000
-  --   sync $ sendA 
-
-  let loop x = do
-        threadDelay 2000000
-        sync $ sendA x
-        loop (x + 10)
-  loop 10
-  
-  -- _ <- on doc mouseDown $ do
-  --   Just button <- toMouseButton <$> mouseButton
-  --   -- let v = case button of
-  --   --       ButtonLeft -> 1
-  --   --       ButtonMiddle -> 2
-  --   --       ButtonRight -> 3
-  --   -- liftIO $ sync $ sendA v
-  --   (x, y) <- mouseClientXY
-  --   liftIO $ putStrLn (show x)
-  --   liftIO $ sync $ sendA x
-
-  -- let loop = do
-  --       startTime <- getTime
-
-  --       clearRect ctx 0 0 6000 4000
-  --       setTransform ctx 1 0 0 1 0 0 
-
-  --       -- runReaderT (render ctx c) imageDB
-
-  --       endTime <- getTime
-
-  --       let diff = (realToFrac (1/60)) - (endTime - startTime)
-  --       when (diff > 0) $ do
-  --         threadDelay $ floor $ diff * 1000000
-  --       loop
-  -- loop
-
--- data Inputs = Inputs {
---   userEvents :: Event UserEvent,
---   time :: Event Time
--- }
-
--- angleChange :: UserEvent -> Maybe (Double -> Double)
--- angleChange (EventKeyDown key) = case key of
---   ArrowLeft  -> Just $ \a -> a - 10
---   ArrowRight -> Just $ \a -> a + 10
---   _          -> Nothing
--- angleChange _ = Nothing
-
--- angleB :: Inputs -> Behaviour Double
-
 posChange :: Fractional a => UserEvent -> Maybe ((a, a) -> (a, a))
 posChange (EventKeyDown key) = case key of
   ArrowLeft  -> Just $ \(x, y) -> (x - 10, y)
@@ -135,63 +59,89 @@ posChange _ = Nothing
 
 -- program :: Inputs -> Behaviour Content
 -- program inputs = createContent <$> posB inputs
-  
 
--- type RegisterEventListener
 
--- runProgramReactive :: (IsEventTarget eventTarget, IsDocument eventTarget)
---                    => CanvasRenderingContext2D
---                    -> eventTarget
---                    -> ImageDB
---                    -> (Inputs -> Behaviour Content)
---                    -> IO ()
--- runProgramReactive ctx doc imageDB renderB = do
---   initialTime <- getTime
---   eventMVar <- newMVar [] -- mutable list to accumulate events as they occur
 
---   -- register event handlers
---   _ <- on doc mouseDown $ do
---     Just button <- toMouseButton <$> mouseButton
---     (x, y) <- mouseClientXY
-    
---     liftIO $ modifyMVar_ eventMVar $ fmap return (EventMouseDown x y button :)
---   _ <- on doc keyDown $ do
---     key <- keyCodeLookup . fromIntegral <$> uiKeyCode
-    
---     liftIO $ modifyMVar_ eventMVar $ fmap return (EventKeyDown key :)
---   _ <- on doc keyUp $ do
---     key <- keyCodeLookup . fromIntegral <$> uiKeyCode
-    
---     liftIO $ modifyMVar_ eventMVar $ fmap return (EventKeyUp key :)
+animateReact :: (IsEventTarget eventTarget, IsDocument eventTarget)
+             => CanvasRenderingContext2D
+             -> eventTarget
+             -> ImageDB
+             -- -> (Double -> IO Content)
+             -> IO ()
+animateReact ctx doc imageDB = do
+  animStartTime <- getTime
 
---   let loop = do
---         -- putStrLn "loop start"
---         startTime <- getTime
+  -- TODO mouse input should be a behaviour 
+  (click, sendClick) <- newEvent
+  (keyDown, sendKeyDown) <- newEvent
+  (keyUp, sendKeyUp) <- newEvent
 
---         clearRect ctx 0 0 6000 4000
---         setTransform ctx 1 0 0 1 0 0 
+  _ <- on doc mouseDown $ do
+    Just button <- toMouseButton <$> mouseButton
+    (x, y) <- mouseClientXY
+    liftIO $ sync $ sendClick $ EventMouseDown x y button
+  -- _ <- on doc keyDown $ do
+  --   key <- keyCodeLookup . fromIntegral <$> uiKeyCode
+  --   liftIO $ sync $ sendKeyDown $ EventKeyDown key
+  -- _ <- on doc keyUp $ do
+  --   key <- keyCodeLookup . fromIntegral <$> uiKeyCode
+  --   liftIO $ sync $ sendKeyUp $ EventKeyUp key
 
---         -- i don't know why this doesn't work!
---         -- events <- fmap (fromMaybe []) $ tryTakeMVar eventMVar
---         events <- modifyMVar eventMVar $ \xs -> return ([], xs)
-        
---         -- [event], state, (event -> state -> IO state)
---         -- mapM_ (putStrLn . show) events
---         -- mapM_ ((flip processEvent) stateIn) (fromMaybe [] events)
---         -- inputState <- foldrM processEvent stateIn events
---         -- newState <- processTime (startTime - initialTime) inputState
+  let loop = do
+        startTime <- getTime
 
---         -- c <- renderState newState
---         runReaderT (render ctx c) imageDB
+        clearRect ctx 0 0 6000 4000
+        setTransform ctx 1 0 0 1 0 0 
 
---         endTime <- getTime
+        -- runReaderT (render ctx c) imageDB
 
---         let diff = (realToFrac (1/60)) - (endTime - startTime)
---         when (diff > 0) $ do
---           threadDelay $ floor $ diff * 1000000
+        endTime <- getTime
 
---         loop 
---   loop 
+        let diff = (realToFrac (1/60)) - (endTime - startTime)
+        when (diff > 0) $ do
+          threadDelay $ floor $ diff * 1000000
+        loop
+  loop
+
+animTest :: (IsEventTarget eventTarget, IsDocument eventTarget)
+             => CanvasRenderingContext2D
+             -> eventTarget
+             -> ImageDB
+             -- -> (Double -> IO Content)
+             -> IO ()
+animTest ctx doc imageDB = do
+  animStartTime <- getTime
+
+  (a, sendA) <- newEvent
+  bA <- hold (0 :: Int) a
+
+  bSumA <- accumB 0 ((+) <$> a)
+  sumA <- accumE 0 ((+) <$> a)
+
+  listen a (\new -> liftIO (putStrLn ("a is now: " ++ (show new))))
+  listenToBehaviour bA (\new -> liftIO (putStrLn ("bA is now: " ++ (show new))))
+  listen sumA (\new -> liftIO (putStrLn ("sumA is now: " ++ (show new))))
+  listenToBehaviour bSumA (\new -> liftIO (putStrLn ("bSumA is now: " ++ (show new))))
+
+  _ <- on doc mouseDown $ do
+    Just button <- toMouseButton <$> mouseButton
+    (x, y) <- mouseClientXY
+    liftIO $ sync $ sendA x
+
+  let loop = do
+        startTime <- getTime
+
+        clearRect ctx 0 0 6000 4000
+        setTransform ctx 1 0 0 1 0 0 
+
+        endTime <- getTime
+
+        let diff = (realToFrac (1/60)) - (endTime - startTime)
+        when (diff > 0) $ do
+          threadDelay $ floor $ diff * 1000000
+        loop
+  loop
+
   
 
 -- simple version based on Shine

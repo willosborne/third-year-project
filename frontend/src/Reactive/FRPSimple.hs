@@ -16,7 +16,6 @@ import Data.IORef
 import System.Mem.Weak -- oh god, weak pointers
 
 type React = IO
--- type Moment = IO
 -- Moment now builds up a list of IOs inside it -- subcomputations built up with >>=
 newtype Moment a = Moment { runMoment :: StateT (S.Set Unique) (WriterT ([IO ()], [IO ()]) IO) a }
   deriving ( Monad,
@@ -225,3 +224,43 @@ switchB bb = Behaviour { behaviourUpdates = switchE (behaviourUpdates <$> bb)
                        , behaviourGetValue = do
                            b <- sample bb -- get the current behaviour and then sample it
                            sample b }
+
+
+-- takes a behaviour, and produce an event that fires every time the behaviour changes
+updates :: Behaviour a -> React (Event a)
+updates b = do
+  (registerListener, propagateListeners) <- newEventRegistration -- make a new event
+  -- this takes the current value of the behaviour and propagates it to listeners of our new event
+  let propagate = sync $ sample b >>= propagateListeners
+
+  -- register an action - simply add propagate to the after updates list with tell.
+  -- store the unregister for later
+  unregisterAction <- eventRegisterListener (behaviourUpdates b) $ \() -> tell ([], [propagate])
+
+  -- disabled till i figure out the finalizer thing
+  -- addFinalizer (behaviourUpdates ba) unregisterAction
+
+  return $ Event registerListener
+
+
+-- NOTE: not sure this is right.
+apply :: Behaviour (a -> b) -> Event a -> Event b
+apply bab ea = Event (\listener -> eventRegisterListener ea $ \x -> do
+                         f <- sample bab
+                         (listener . f) x)
+-- apply bab ea = sample bab >>= \f -> f <$> ea
+                    
+
+(<@>) :: Behaviour (a -> b) -> Event a -> Event b
+(<@>) = apply
+
+-- when the Event fires, its value is replaced with the current value of the Behaviour
+(<@) :: Behaviour a -> Event b -> Event a
+ba <@ eb = Event (\listener -> eventRegisterListener eb $
+                   \_ -> (sample ba >>= listener))
+
+whenE :: Behaviour Bool -> Event a -> Event a
+whenE bbool ea = Event (\listener -> eventRegisterListener ea $ \x -> do
+                           firep <- sample bbool
+                           when firep $ listener x)
+  

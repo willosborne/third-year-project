@@ -65,6 +65,7 @@ import Animation
 import GHCJSTime
 import Input
 
+import Life
 -- import Control.Monad.Reader
 import Control.Concurrent
 -- import Control.Concurrent.MVar (newMVar, modifyMVar, modifyMVar_)
@@ -200,9 +201,11 @@ helloMain = do
       
   -- runProgram ctx doc imageDB initialState renderState processEvent processTime
 
-  animateReact ctx doc imageDB
+  -- animateReact ctx doc imageDB
 
   -- runReaderT (render ctx ((Image "egg" Original) <> (Translate 100 0 (Image "yoda" Original)))) imageDB
+
+  runLife ctx doc
 
 
   -- syncPoint
