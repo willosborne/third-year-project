@@ -1,35 +1,3 @@
--- module Main where
-
--- import Control.Applicative
-
--- import Control.Concurrent
--- import Control.Monad.Trans
--- import Control.Monad
-
--- import Data.Monoid
-
--- import Reactive.FRPSimple
-
--- main :: IO ()
--- main = do (a, sendA) <- newEvent
---           (b, sendB) <- newEvent
---           ba <- hold (0 :: Int) a
---           bb <- hold (0 :: Int) b
-
---           let bab = (+) <$> ba <*> bb
-
---           bsum <- accumB 0 (((+) <$> a) <> ((+) <$> b))
-
---           listenToBehaviour bab (\new -> liftIO (putStrLn ("Value is now " ++ show new)))
---           listenToBehaviour bsum (\new -> liftIO (putStrLn ("Sum is now " ++ show new)))
---           forever $ do x <- getLine
---                        sync $ case x of
---                                 ('a':xs) -> sendA (read xs)
---                                 ('b':xs) -> sendB (read xs)
---                                 _ -> return ()
-
-
-
 module Main where
 
 -- import GHCJS
@@ -64,6 +32,7 @@ import ImagePreloader
 import Animation
 import GHCJSTime
 import Input
+import Slide
 
 import Life
 -- import Control.Monad.Reader

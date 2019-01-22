@@ -38,6 +38,7 @@ executable frontend
                      , common
                      , reflex-dom
                      , ghcjs-dom >= 0.9 && <0.10
+                     , ghcjs-dom-jsffi 
                      , mtl
                      , jsaddle
                      , ghcjs-base

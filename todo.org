@@ -16,13 +16,14 @@ Expose index.html for user editing?
 https://www.html5canvastutorials.com/tutorials/html5-canvas-wrap-text-tutorial/
 ***** TODO bold, italic (et al) rendering
 This will be very difficult.
-**** TODO [#A] Image rendering [3/5]
+**** TODO [#A] Image rendering [3/6]
 ***** DONE Image pre-loader
 ***** DONE Content classes for image
 ***** TODO Ability to scale and crop image
 ***** DONE Load from external URL
 ***** TODO Load from local file
 Need to expose simple system for loading these images w/o copying to build directory
+***** TODO Stop it crashing when file is missing
 **** DONE Line rendering
 **** DONE Poly rendering
 **** TODO [#C] Spline rendering?
@@ -74,9 +75,7 @@ cat = Image "cat" Original
 
 AnimFunc :: AnimControl -> Content -> Content -> Content
 slide t content property = 
-*** IDEAS
-Time varying Contents!
-*** Problems with event system
+*** TODO Problems with event system
 *PROBLEM*: the finalizer is called much earlier than it should be causing the event to unregister when it shouldn't.
 Weak pointers in threaded Haskell (and GHCJS) are the problem
 

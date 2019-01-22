@@ -226,7 +226,7 @@ switchB bb = Behaviour { behaviourUpdates = switchE (behaviourUpdates <$> bb)
                            sample b }
 
 
--- takes a behaviour, and produce an event that fires every time the behaviour changes
+-- |Takes a behaviour, and produce an event that fires every time the behaviour changes
 updates :: Behaviour a -> React (Event a)
 updates b = do
   (registerListener, propagateListeners) <- newEventRegistration -- make a new event
@@ -243,24 +243,30 @@ updates b = do
   return $ Event registerListener
 
 
--- NOTE: not sure this is right.
+-- |Apply current function in behaviour to values supplied to event
 apply :: Behaviour (a -> b) -> Event a -> Event b
 apply bab ea = Event (\listener -> eventRegisterListener ea $ \x -> do
                          f <- sample bab
                          (listener . f) x)
--- apply bab ea = sample bab >>= \f -> f <$> ea
                     
-
+-- |Synonym for 'apply'
 (<@>) :: Behaviour (a -> b) -> Event a -> Event b
 (<@>) = apply
 
--- when the Event fires, its value is replaced with the current value of the Behaviour
+-- |When the Event fires, its value is replaced with the current value of the Behaviour
 (<@) :: Behaviour a -> Event b -> Event a
 ba <@ eb = Event (\listener -> eventRegisterListener eb $
                    \_ -> (sample ba >>= listener))
 
+-- |Fire an event only when the behaviour evaluates True
 whenE :: Behaviour Bool -> Event a -> Event a
 whenE bbool ea = Event (\listener -> eventRegisterListener ea $ \x -> do
                            firep <- sample bbool
                            when firep $ listener x)
   
+
+-- |Filter an event to only fire with values that satisfy the predicate
+filterE :: (a -> Bool) -> Event a -> Event a
+filterE p ea = Event (\listener -> eventRegisterListener ea $ \x ->
+                         when (p x) $ listener x)
+                       

@@ -29,27 +29,66 @@ import Reactive.FRPSimple
   
 type AnimControl = Double
 
--- easing function
-lerp :: Double -> Double -> AnimControl -> Double
-lerp v0 v1 t = v0 + (v1 - v0) * t
 
-easeLinear :: AnimControl -> AnimControl
+type Ease = AnimControl -> AnimControl
+
+easeLinear :: Ease
 easeLinear = id
 
-easeSin :: AnimControl -> AnimControl
+easeSin :: Ease
 easeSin t = sin (t * pi/2)
 
-transition :: (Double -> Content -> Content) -> Double -> Double -> (AnimControl -> AnimControl) -> AnimControl -> Content -> Content
-transition modifier v0 v1 ease t c = modifier v c
-  where
-    v = lerp v0 v1 $ ease t
+lerp :: (RealFrac a) => a -> a -> AnimControl -> a
+lerp v0 v1 t = v0 + (v1 - v0) * (realToFrac t)
 
-posChange :: Fractional a => UserEvent -> Maybe ((a, a) -> (a, a))
-posChange (EventKeyDown key) = case key of
-  ArrowLeft  -> Just $ \(x, y) -> (x - 10, y)
-  ArrowRight -> Just $ \(x, y) -> (x + 10, y)
-  _          -> Nothing
-posChange _ = Nothing
+-- transition :: (Double -> Content -> Content) -> Double -> Double -> Ease -> AnimControl -> Content -> Content
+-- transition modifier v0 v1 ease t c = modifier v c
+--   where
+--     v = lerp v0 v1 $ ease t
+
+class Interpolate a where
+  -- |Interpolate between one value and another
+  interpolate :: a -> a -> AnimControl -> a
+
+instance Interpolate Double where
+  interpolate = lerp
+
+instance Interpolate Float where
+  interpolate = lerp
+
+instance Interpolate Int where
+  interpolate v0 v1 t = floor $ lerp (fromIntegral v0) (fromIntegral v1) t
+
+instance Interpolate Color where
+  interpolate (RGBA r1 g1 b1 a1) (RGBA r2 g2 b2 a2) t = (RGBA
+                                                          (interpolate r1 r2 t)
+                                                          (interpolate g1 g2 t)
+                                                          (interpolate b1 b2 t)
+                                                          (interpolate a1 a2 t))
+  interpolate (RGB r1 g1 b1) (RGB r2 g2 b2) t = (RGB
+                                                  (interpolate r1 r2 t)
+                                                  (interpolate g1 g2 t)
+                                                  (interpolate b1 b2 t))
+
+-- parameter, ease, render function, duration
+data Anim = Anim AnimControl Ease (AnimControl -> Content) Int
+
+
+-- take a function that lerps between two values and two values and returns a specialised lerp
+makeTween :: (Interpolate val)
+          => (Interpolate -> Interpolate -> AnimControl -> Interpolate)
+          -> Interpolate
+          -> Interpolate
+          -> (AnimControl -> Interpolate)
+          
+          
+
+-- posChange :: Fractional a => UserEvent -> Maybe ((a, a) -> (a, a))
+-- posChange (EventKeyDown key) = case key of
+--   ArrowLeft  -> Just $ \(x, y) -> (x - 10, y)
+--   ArrowRight -> Just $ \(x, y) -> (x + 10, y)
+--   _          -> Nothing
+-- posChange _ = Nothing
 
 -- posB :: Fractional a => Inputs -> Behaviour (a, a)
 -- posB = accumB (0, 0) . filterJust . fmap posChange . userEvents
@@ -162,15 +201,14 @@ runProgram ctx doc imageDB initialState renderState processEvent processTime = d
   _ <- on doc mouseDown $ do
     Just button <- toMouseButton <$> mouseButton
     (x, y) <- mouseClientXY
-    
     liftIO $ modifyMVar_ eventMVar $ fmap return (EventMouseDown x y button :)
+
   _ <- on doc keyDown $ do
     key <- keyCodeLookup . fromIntegral <$> uiKeyCode
-    
     liftIO $ modifyMVar_ eventMVar $ fmap return (EventKeyDown key :)
+
   _ <- on doc keyUp $ do
     key <- keyCodeLookup . fromIntegral <$> uiKeyCode
-    
     liftIO $ modifyMVar_ eventMVar $ fmap return (EventKeyUp key :)
 
   let loop stateIn = do
