@@ -80,6 +80,10 @@ slide t content property =
 Weak pointers in threaded Haskell (and GHCJS) are the problem
 
 Events do not have the value passing issue; may be a problem in the hold function
+
+NOTE: framerate-independent rendering occurs as a side-effect.
+*** render system notes
+Need a way of specifying tweens easily
 ** TODO move render functionality to typeclass to allow for extensibility
 ** TODO Local image store
 Ensure images and other resources are bundled alongside the webpage and js code.

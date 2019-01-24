@@ -32,6 +32,15 @@ data Content =
   deriving (Eq, Show)
   -- TODO add splines and arcs
 
+scaleC :: Double -> Double -> Content -> Content
+scaleC x y c = Scale x y c
+
+translateC :: Double -> Double -> Content -> Content
+translateC x y c = Translate x y c
+
+rotateC :: Double -> Content -> Content
+rotateC angle c = Rotate angle c
+
 instance Monoid Content where
   mappend = Combine
   mempty = Empty

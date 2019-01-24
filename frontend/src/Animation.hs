@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 module Animation where
 
 import Content
@@ -29,6 +30,9 @@ import Reactive.FRPSimple
   
 type AnimControl = Double
 
+clampAnimControl :: AnimControl -> AnimControl
+clampAnimControl = max 0 . min 1
+
 
 type Ease = AnimControl -> AnimControl
 
@@ -59,6 +63,12 @@ instance Interpolate Float where
 instance Interpolate Int where
   interpolate v0 v1 t = floor $ lerp (fromIntegral v0) (fromIntegral v1) t
 
+-- instance Interpolate (Double -> Content -> Content) where
+--   interpolate v0 v1 t f = 
+
+instance Interpolate (Double, Double) where
+  interpolate (x0, y0) (x1, y1) t = (lerp x0 x1 t, lerp x0 x1 t)
+
 instance Interpolate Color where
   interpolate (RGBA r1 g1 b1 a1) (RGBA r2 g2 b2 a2) t = (RGBA
                                                           (interpolate r1 r2 t)
@@ -71,17 +81,59 @@ instance Interpolate Color where
                                                   (interpolate b1 b2 t))
 
 -- parameter, ease, render function, duration
-data Anim = Anim AnimControl Ease (AnimControl -> Content) Int
+-- data Anim = Anim AnimControl Ease (AnimControl -> Content) Int
+data Anim = Anim AnimControl Ease (AnimControl -> Content -> Content) Int
 
+-- data Anims = Anims AnimControl Ease [(AnimControl -> Content -> Content)] Content Int
+data Anims = Anims [Anim] Content
+
+-- take an anim, a delta time, and update the control value
+-- updateAnim :: Int -> Anim -> Anim
+-- updateAnim dt (Anim t ease c duration) = Anim t' ease c duration
+--   where
+--     t' = clampAnimControl $ t + dt'
+--     dt' = (fromIntegral dt) / (fromIntegral duration)
+updateAnim :: Int -> Anim -> Anim
+updateAnim dt (Anim t ease c duration) = Anim t' ease c duration
+  where
+    t' = clampAnimControl $ t + dt'
+    dt' = (fromIntegral dt) / (fromIntegral duration)
+
+-- updateAnims :: Int -> [Anim] -> [Anim]
+-- updateAnims dt anims = map (updateAnim dt) anims
+updateAnims :: Int -> Anims -> Anims
+updateAnims dt (Anims as c) = Anims (map (updateAnim dt) as) c
+
+-- renderAnim :: Anim -> Content
+-- renderAnim (Anim t ease c _) = c $ ease t
+
+-- NOTE: haskell library function to traverse a list of functions, building up a result
+-- [ (\t c -> c), ... ]
+-- want to go [AnimControl -> Content -> Content] to AnimControl -> Content
+renderAnims :: Anims -> Content
+-- renderAnims (Anims as) = foldr ($) c (map ($ (ease t)) transforms)
+renderAnims (Anims as c) = foldr ($) c (map renderA as)
+  where
+    renderA (Anim t ease f _) = f $ ease t
 
 -- take a function that lerps between two values and two values and returns a specialised lerp
-makeTween :: (Interpolate val)
-          => (Interpolate -> Interpolate -> AnimControl -> Interpolate)
-          -> Interpolate
-          -> Interpolate
-          -> (AnimControl -> Interpolate)
-          
-          
+-- NOTE: should this render a Content directly?
+makeTween :: (Interpolate interpolate)
+          => (interpolate -> interpolate -> AnimControl -> Content -> Content)
+          -> interpolate
+          -> interpolate
+          -> Content
+          -> (AnimControl -> Content)
+makeTween f v0 v1 c = \t -> f v0 v1 t c
+
+-- this makes a tween that generates a *transform*, not a content - so you still need to pass in a content
+makeTween' :: (Interpolate interpolate)
+           => (interpolate -> interpolate -> AnimControl -> Content -> Content)
+           -> interpolate
+           -> interpolate
+           -> (AnimControl -> Content -> Content)
+makeTween' f v0 v1 = \t -> f v0 v1 t
+        
 
 -- posChange :: Fractional a => UserEvent -> Maybe ((a, a) -> (a, a))
 -- posChange (EventKeyDown key) = case key of

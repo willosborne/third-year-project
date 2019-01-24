@@ -16,9 +16,12 @@ import GHCJS.DOM.Document
 import GHCJS.DOM.EventM
 import GHCJS.DOM.Types hiding (Text, Event)
 import GHCJS.DOM.GlobalEventHandlers
+import GHCJS.DOM.CanvasRenderingContext2D
 
+import Data.Monoid ((<>))
 import Control.Monad
 import Control.Monad.IO.Class
+import Control.Concurrent
 
 -- NOTE: consider adding keyPressed event
 
@@ -74,45 +77,95 @@ generateTick fps = do
 
   let delay = floor $ (1 / (fromIntegral fps)) * 1000000
 
-  forkIO $ forever $ do
+  _ <- forkIO $ forever $ do
     threadDelay delay
-    sendTick delay
+    sync $ sendTick delay
+
+  return tick
 
 
+tweenX :: Double -> Double -> AnimControl -> Content -> Content
+tweenX x0 x1 t c = Translate x 200 c
+  where
+    x = lerp x0 x1 t
 
+
+tweenTranslate :: (Double, Double) -> (Double, Double) -> AnimControl -> Content -> Content
+tweenTranslate = tween (pair Translate)
+
+tweenScale :: (Double, Double) -> (Double, Double) -> AnimControl -> Content -> Content
+-- tweenTranslate = tweenPair Scale
+tweenScale = tween (pair Scale)
+
+-- partially uncurry function to use a pair for interpolation over multiple things
+pair :: (a -> a -> b -> b) -> ((a, a) -> b -> b)
+pair f = \(x1, x2) b -> f x1 x2 b
+
+-- -- |Generic tween function over two-value properties (i.e. position and scale)
+-- tweenPair :: (Double -> Double -> Content -> Content) -- property to tween - e.g. Translate
+--           -> (Double, Double) -> (Double, Double) -- start and end
+--           -> AnimControl
+--           -> Content
+--           -> Content
+-- tweenPair property p0 p1 t c = property x y c
+--   where
+--     (x, y) = interpolate p0 p1 t
+
+tweenColor :: (Color -> Content -> Content) -- property to tween - e.g. Translate
+          -> Color -> Color -- start and end
+          -> AnimControl
+          -> Content
+          -> Content
+tweenColor = tween
+
+tween :: (Interpolate interp)
+      => (interp -> Content -> Content)
+      -> interp -> interp
+      -> AnimControl
+      -> Content
+      -> Content
+tween property v0 v1 t c = property v c
+  where
+    v = interpolate v0 v1 t
+
+-- NOTE: could interpolate over Double -> Double -> Content -> Content *functions*
+-- this gives us a Content -> Content function which can then be applied directly
+
+
+-- sample an Anims behaviour and render it, all in one go.
+renderAnimsB :: CanvasRenderingContext2D -> ImageDB -> Behaviour (Anims) -> IO ()
+renderAnimsB ctx imageDB animsB = do
+  anims <- sync $ sample animsB 
+  renderContent ctx (renderAnims anims) imageDB
 
 slideshow :: (IsEventTarget document, IsDocument document)
-          => document
+          => CanvasRenderingContext2D
+          -> document
           -> ImageDB
           -> Int
           -> IO ()
-slideshow doc imageDB fps = do
+slideshow ctx doc imageDB fps = do
   Inputs { clicks=clicks, keyPressed=keyPressed, next=next, previous=previous } <- generateInputs doc
   tick <- generateTick fps
 
   timeRef <- initTime
 
-  -- let anim = Anim 0.0 easeSin (
+  let t1 = makeTween' tweenTranslate (100, 100) (600, 500)
+  let t2 = makeTween' (tweenColor FillColor) (RGB 255 0 0) (RGB 0 255 0)
+  
+  let anims = Anims [Anim 0.0 easeSin t1 2000000, Anim 0.0 easeSin t2 1000000] $ FCircle 100
 
-  a <- accumB 
+  let updateA' = ((pure updateAnims) <@> tick)
 
-  anims :: Behaviour (Behaviour Content)
+  a <- accumB anims updateA'
 
   let loop = do
-        -- startTime <- getTime
-
         -- clear screen
         clearRect ctx 0 0 6000 4000
         setTransform ctx 1 0 0 1 0 0 
-
-        -- g <- sync $ sample bLife
         
-        -- renderContent ctx (renderGrid g) em
+        renderAnimsB ctx imageDB a
 
-
-        -- endTime <- getTime
-
-        -- let diff = (realToFrac (1/30)) - (endTime - startTime)
         dtMs <- updateTime timeRef -- time in ms since last update
         let diff = (floor $ (1 / fromIntegral fps) * 1000) - dtMs
         when (diff > 0) $ do

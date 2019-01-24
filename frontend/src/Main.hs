@@ -174,8 +174,9 @@ helloMain = do
 
   -- runReaderT (render ctx ((Image "egg" Original) <> (Translate 100 0 (Image "yoda" Original)))) imageDB
 
-  runLife ctx doc
+  -- runLife ctx doc
 
+  slideshow ctx doc imageDB 60
 
   -- syncPoint
 
