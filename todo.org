@@ -2,6 +2,8 @@
 ** TODO [#A] Copy in custom html/css on first build
 Currently it just uses the default index.html which won't include the CSS reset we want.
 Expose index.html for user editing?
+** TODO [#A] Move all rendering functions from Double to Float
+For speed and consistency. No need for that level of precision and most of the GHCJS-DOM libraries use Float.
 ** DONE Get canvas rendering working
 *** DONE Work out how to use getElementById from within haskell
 ** TODO [#B] Refactor cabal stuff to expose core as a library

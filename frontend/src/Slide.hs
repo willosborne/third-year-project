@@ -14,14 +14,16 @@ import Web.KeyCode
 import GHCJS.DOM
 import GHCJS.DOM.Document
 import GHCJS.DOM.EventM
-import GHCJS.DOM.Types hiding (Text, Event)
-import GHCJS.DOM.GlobalEventHandlers
+import GHCJS.DOM.Types hiding (Text, Event, Animation)
+import GHCJS.DOM.GlobalEventHandlers hiding (error)
 import GHCJS.DOM.CanvasRenderingContext2D
 
 import Data.Monoid ((<>))
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Concurrent
+
+import Data.Typeable
 
 -- NOTE: consider adding keyPressed event
 
@@ -84,59 +86,76 @@ generateTick fps = do
   return tick
 
 
-tweenX :: Double -> Double -> AnimControl -> Content -> Content
-tweenX x0 x1 t c = Translate x 200 c
-  where
-    x = lerp x0 x1 t
+-- tweenX :: Double -> Double -> AnimControl -> Content -> Content
+-- tweenX x0 x1 t c = Translate x 200 c
+--   where
+--     x = lerp x0 x1 t
 
 
-tweenTranslate :: (Double, Double) -> (Double, Double) -> AnimControl -> Content -> Content
-tweenTranslate = tween (pair Translate)
+-- tweenTranslate :: (Double, Double) -> (Double, Double) -> AnimControl -> Content -> Content
+-- tweenTranslate = tween (pair Translate)
 
-tweenScale :: (Double, Double) -> (Double, Double) -> AnimControl -> Content -> Content
--- tweenTranslate = tweenPair Scale
-tweenScale = tween (pair Scale)
+-- tweenScale :: (Double, Double) -> (Double, Double) -> AnimControl -> Content -> Content
+-- tweenScale = tween (pair Scale)
 
 -- partially uncurry function to use a pair for interpolation over multiple things
 pair :: (a -> a -> b -> b) -> ((a, a) -> b -> b)
 pair f = \(x1, x2) b -> f x1 x2 b
 
--- -- |Generic tween function over two-value properties (i.e. position and scale)
--- tweenPair :: (Double -> Double -> Content -> Content) -- property to tween - e.g. Translate
---           -> (Double, Double) -> (Double, Double) -- start and end
+pairI :: (Double -> Double -> b -> b) -> (I -> b -> b)
+pairI f = \p b -> case p of
+  (PairI (x, y)) -> f x y b
+  DefaultI -> f 0 0 b
+  g -> error $ "Must pass PairI. Got " ++ (show (typeOf g))
+
+doubleI :: (Double -> b -> b) -> (I -> b -> b)
+doubleI f = \p b -> case p of
+  (DoubleI x) -> f x b
+  DefaultI -> f 0 b
+  _ -> error "Must pass DoubleI."
+
+intI :: (Int -> b -> b) -> (I -> b -> b)
+intI f = \i b -> case i of
+  (IntI x) -> f x b
+  DefaultI -> f 0 b
+  _ -> error "Must pass IntI."
+
+colorI :: (Color -> b -> b) -> (I -> b -> b)
+colorI f = \c b -> case c of
+  (ColorI col) -> f col b
+  DefaultI -> f black b
+  g -> error $ "Must pass ColorI. Got " ++ (show g)
+
+-- tweenColor :: (Color -> Content -> Content) -- property to tween - e.g. Translate
+--           -> Color -> Color -- start and end
 --           -> AnimControl
 --           -> Content
 --           -> Content
--- tweenPair property p0 p1 t c = property x y c
---   where
---     (x, y) = interpolate p0 p1 t
+-- tweenColor = tween
 
-tweenColor :: (Color -> Content -> Content) -- property to tween - e.g. Translate
-          -> Color -> Color -- start and end
-          -> AnimControl
-          -> Content
-          -> Content
-tweenColor = tween
-
-tween :: (Interpolate interp)
-      => (interp -> Content -> Content)
-      -> interp -> interp
+tween :: (I -> Content -> Content)
+      -> I -> I
       -> AnimControl
       -> Content
       -> Content
 tween property v0 v1 t c = property v c
   where
-    v = interpolate v0 v1 t
+    v = interpolate' v0 v1 t
+-- tween :: (Interpolate interp)
+--       => (interp -> Content -> Content)
+--       -> interp -> interp
+--       -> AnimControl
+--       -> Content
+--       -> Content
+-- tween property v0 v1 t c = property v c
+--   where
+--     v = interpolate v0 v1 t
 
--- NOTE: could interpolate over Double -> Double -> Content -> Content *functions*
--- this gives us a Content -> Content function which can then be applied directly
-
-
--- sample an Anims behaviour and render it, all in one go.
-renderAnimsB :: CanvasRenderingContext2D -> ImageDB -> Behaviour (Anims) -> IO ()
-renderAnimsB ctx imageDB animsB = do
+-- sample an Animation behaviour and render it, all in one go.
+renderAnimationB :: CanvasRenderingContext2D -> ImageDB -> Behaviour (Animation) -> IO ()
+renderAnimationB ctx imageDB animsB = do
   anims <- sync $ sample animsB 
-  renderContent ctx (renderAnims anims) imageDB
+  renderContent ctx (renderAnimation anims) imageDB
 
 slideshow :: (IsEventTarget document, IsDocument document)
           => CanvasRenderingContext2D
@@ -147,24 +166,52 @@ slideshow :: (IsEventTarget document, IsDocument document)
 slideshow ctx doc imageDB fps = do
   Inputs { clicks=clicks, keyPressed=keyPressed, next=next, previous=previous } <- generateInputs doc
   tick <- generateTick fps
-
   timeRef <- initTime
 
-  let t1 = makeTween' tweenTranslate (100, 100) (600, 500)
-  let t2 = makeTween' (tweenColor FillColor) (RGB 255 0 0) (RGB 0 255 0)
-  
-  let anims = Anims [Anim 0.0 easeSin t1 2000000, Anim 0.0 easeSin t2 1000000] $ FCircle 100
+  -- NOTE serious problem. At the moment you need to store the previous state at the beginning of every tween, and accumulate *all previous transforms*
+  -- also need to somehow separate anims out between objects
+  -- let anim1 = Animation [ makeTween tweenTranslate (100, 100) (600, 500) easeSin 2000000
+  --                       , makeTween (tween FillColor) (RGB 255 0 0) (RGB 0 0 255) easeSin 2000000
+  --                       , makeTween (tween StrokeWidth) 0 10 easeSin 2000000 ] $ FCircle 100
+  -- let anim1 = Animation [ makeTween (tween (pairI Translate)) (PairI (100, 100)) (PairI (600, 500)) easeSin 2000000
+  --                       , makeTween (tween (colorI FillColor)) (ColorI (RGB 255 0 0)) (ColorI (RGB 0 0 255)) easeSin 2000000
+  --                       , makeTween (tween (doubleI StrokeWidth)) (DoubleI 0) (DoubleI 10) easeSin 2000000 ] $ FCircle 100
+  -- let animChain = chainAnimations [ chainTween (tween (pairI Translate)) (PairI (400, 100)) easeSin 2000000
+  --                                 , chainTween (tween (colorI FillColor)) (ColorI (RGB 0 255 0)) easeSin 2000000
+  --                                 , chainTween (tween (doubleI StrokeWidth)) (DoubleI 0) easeSin 2000000 ] anim1
+  let anim1 = Animation [
+        makeTween (tween (pairI Translate)) (PairI (100, 100)) (PairI (600, 500)) easeSin 2000000
+        , makeTween (tween (pairI Scale)) (PairI (1, 1)) (PairI (2, 2)) easeSin 2000000
+        ,  makeTween (tween (colorI FillColor)) (ColorI (RGB 255 0 0)) (ColorI (RGB 0 255 0)) easeSin 2000000
+        , makeTween (tween (doubleI StrokeWidth)) (DoubleI 0) (DoubleI 10) easeSin 2000000
+        ] $ FRect 100 100
+  let animChain = chainAnimations [
+        chainTween (tween (pairI Translate)) (PairI (400, 100)) easeSin 2000000
+        , chainTween (tween (pairI Scale)) (PairI (1, 1)) easeSin 2000000
+        , chainTween (tween (colorI FillColor)) (ColorI (RGB 0 0 255)) easeSin 2000000
+        , chainTween (tween (doubleI StrokeWidth)) (DoubleI 0) easeSin 2000000
+        ] anim1
 
-  let updateA' = ((pure updateAnims) <@> tick)
+  -- let updateA' = (pure updateAnimation) <@> tick
+  let updateA' = updateAnimation <$> tick
 
-  a <- accumB anims updateA'
+  a <- accumB anim1 updateA'
+  a' <- accumB animChain updateA'
+  -- b <- accumB anim2 updateA'
+
+  -- NOTE: could use updates to reset animation on next event
+
+  -- renderedAnim <- switchB
+
 
   let loop = do
         -- clear screen
         clearRect ctx 0 0 6000 4000
         setTransform ctx 1 0 0 1 0 0 
         
-        renderAnimsB ctx imageDB a
+        renderAnimationB ctx imageDB a
+        renderAnimationB ctx imageDB a'
+        -- renderAnimationB ctx imageDB b
 
         dtMs <- updateTime timeRef -- time in ms since last update
         let diff = (floor $ (1 / fromIntegral fps) * 1000) - dtMs

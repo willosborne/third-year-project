@@ -100,7 +100,7 @@ render ctx (StrokeColor color c) = do
 
 render ctx (StrokeWidth w c) = do
   save ctx
-  setLineWidth ctx w
+  setLineWidth ctx (realToFrac w)
   render ctx c
   restore ctx 
   -- setLineWidth ctx 1

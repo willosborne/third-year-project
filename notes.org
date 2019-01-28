@@ -35,5 +35,20 @@ Not THAT relevant, but does some neat stuff (mostly static image composition wit
 *** reactive-banana walkthrough https://wiki.haskell.org/FRP_explanation_using_reactive-banana
 ** Libraries
 * Tricky things
-** How does FRP behaviour expressed in Haskell translate into JavaScript 
-(is that just a mirrored JS FRP?)
+Need to chain animations into each other, preserving properties set in previous tweens. 
+Need some concept of object state at end of each Tween
+Need to compare Tween objects to identify which is the same
+
+Idea: accumulate object state through animations - only need to update it at the end of each animation
+
+Idea: take the final object and extract its transforms by unwrapping the layers
+Only remove the transform layers and keep everything else exactly the same
+
+What I have: a list of AnimControl -> Content -> Content transforms
+What I want: to leave untouched the transforms that aren't modified
+
+Could: 
+loop through transforms
+remove any that are used - need to extract final value, though!
+turn any that are unused into consts 
+

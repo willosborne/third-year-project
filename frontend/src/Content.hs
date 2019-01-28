@@ -27,10 +27,15 @@ data Content =
   | Text Font (Maybe Float) String  -- font, max width, text  TODO: wrap text rather than squashing it!
   | FillColor Color Content -- fill color
   | StrokeColor Color Content -- fill color
-  | StrokeWidth Float Content
+  | StrokeWidth Double Content
   | Image String ImageSize
   deriving (Eq, Show)
   -- TODO add splines and arcs
+
+-- used in tweens
+data TransformType = Translation | Scaling | Rotation | FillColorChange | StrokeColorChange | StrokeWidthChange | None
+                   deriving (Eq, Show)
+-- TODO remove None and use a Maybe instead
 
 scaleC :: Double -> Double -> Content -> Content
 scaleC x y c = Scale x y c
@@ -49,6 +54,14 @@ instance Monoid Content where
 data Color = RGBA Int Int Int Float
            | RGB Int Int Int
            deriving (Eq)
+-- NOTE: consider adding Transparent as a way of setting no fill
+
+black, white, red, green, blue :: Color
+black = (RGB 0 0 0)
+white = (RGB 255 255 255)
+red = (RGB 255 0 0)
+green = (RGB 0 255 0)
+blue = (RGB 0 0 255)
 
 instance Show Color where
   show (RGBA r g b a) = "rgba(" ++

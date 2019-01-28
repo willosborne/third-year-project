@@ -40,6 +40,7 @@ instance Monoid (Event a) where
 never :: Event a
 never = Event (\_ -> return (return ()))
 
+-- |Merge two events. The result will fire whenever either of the supplied events do.
 merge :: Event a -> Event a -> Event a
 merge a b = Event (\listener -> do
                       -- take listener for output event
@@ -72,6 +73,7 @@ instance Applicative Behaviour where
 instance Functor Behaviour where
   fmap f b = pure f <*> b
 
+-- |Create a new Event and return it, along with a function to fire its listeners with a supplied value.
 newEvent :: React (Event a, a -> Moment ())
 newEvent = do
   (registerListener, propagateListeners) <- newEventRegistration
@@ -81,32 +83,21 @@ newEvent = do
 newEventRegistration :: React (RegisterEventListener a, a -> Moment ())
 newEventRegistration = do
   listeners <- newIORef M.empty
+  -- when called, registerListener adds a callback to the listeners map
   let registerListener listener = do
         listenerKey <- newUnique -- guaranteed to return a unique key every time this is called
+        -- for each listener, insert it into the map with its unique key
         modifyIORef listeners (M.insert listenerKey listener)
+        -- return new map 
         return (modifyIORef listeners (M.delete listenerKey))
+      -- propagateListeners fires the event on all listening callbacks.
       propagateListeners x = do
         listeners' <- M.elems <$> liftIO (readIORef listeners)
         mapM_ ($ x) listeners'
+  -- return functions - map is stored in closure IORef
   return (registerListener, propagateListeners)
 
-
--- we now have a function to create events; they can then be fired by calling an IO function
--- now need a stepper function to turn an Event a into a Behaviour a
-
--- take an initial value, and an event to mimic
--- naive version (comment out) - it just immediately updates the IORef, which will make issues with sampling over time
--- need to wait until end of the Moment
--- hold :: a -> Event a -> React (Behaviour a)
--- hold initial updates = do
---   cell <- newIORef initial
---   let behaviour = Behaviour { behaviourUpdates = () <$ updates -- turn an Event a into an Event (); this registers handlers to mimic updates
---                             , behaviourGetValue = liftIO (readIORef cell) }
---   unregisterUpdates <- registerlistener updates (\x -> writeIORef cell x)
---   addFinaliser behaviour unregisterUpdates -- use weak pointers to run the IO action (unregisterUpdates) when behaviour is cleaned up
---   return behaviour
-
-
+-- |Takes an initial value and an Event, and produces a stepper Behaviour which updates its current value whenever the Event fires.
 hold :: a -> Event a -> React (Behaviour a)
 hold initial updates = do
   cell <- newIORef initial
