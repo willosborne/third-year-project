@@ -21,6 +21,7 @@ import Control.Concurrent
 import Control.Concurrent.MVar (newMVar, modifyMVar, modifyMVar_)
   
 import Data.Foldable (foldrM, find)
+import Data.List (deleteBy)
 import qualified Data.Map as M
 -- import Data.Maybe (fromMaybe)
 
@@ -102,14 +103,13 @@ interpolate' (ColorI (RGB r1 g1 b1)) (ColorI (RGBA r2 g2 b2 a2)) t = interpolate
                                                                      t
 interpolate' DefaultI DefaultI _ = DefaultI
 interpolate' a b _ = error ("Mismatched interps. Interps: " ++ (show a) ++ ", " ++ (show b))
--- interpolate' a b _ = error (traceId ("Mismatched interps. Types: " ++ (show (typeOf a)) ++ ", " ++ (show (typeOf b))))
--- interpolate' _ _ _ = error "yeet"
 
--- unboxI :: (Interpolate interp) => I -> interp
--- unboxI (PairI x) = x
--- unboxI (IntI x) = x
--- unboxI (ColorI x) = x
--- unboxI (DoubleI x) = x
+defaultI :: I -> I
+defaultI (DoubleI _) = DoubleI 0
+defaultI (IntI _) = IntI 0
+defaultI (PairI _) = PairI (0, 0)
+defaultI (ColorI _) = ColorI black
+defaultI DefaultI = DefaultI
 
 -- data Interpolate' a where
 --   DoubleI :: Double -> Interpolate' Double
@@ -164,46 +164,6 @@ type ChainTween = ((I -> I -> AnimControl -> Content -> Content), I, Ease, Int)
 -- data Animation = Animation AnimControl Ease [(AnimControl -> Content -> Content)] Content Int
 data Animation = Animation [Tween] Content
 -- data Animation' interp = Animation' [Tween] Content TransformState
-
-
--- want to generate one of these for each complete Animation 
--- each tween should output its final state when created
--- any left untouched should keep their previous value
--- data TransformState = TransformState {
---   position :: (Double, Double),
---   scale :: (Double, Double),
---   rotation :: Double,
---   fillColor :: Color,
---   strokeColor :: Color,
---   strokeWidth :: Double
---   } deriving (Eq, Show)
-
--- defaultState :: TransformState
--- defaultState = TransformState {
---   position = (0, 0),
---   scale = (1, 1),
---   rotation = 0,
---   fillColor = RGB 0 0 0,
---   strokeColor = RGB 0 0 0,
---   strokeWidth = 0
---   }
-
--- state is a map for each of the various transforms to a value
--- data TransformState where
---   TransformState :: (Interpolate interpolate) => M.Map TransformType interpolate -> TransformState
--- -- type TransformState interp = M.Map TransformType interp
--- -- data TransformState = forall interp. Interpolate interp => TransformState {M.Map TransformType (a :: interp)}
--- -- data TransformState = forall interp. Interpolate interp => TransformState {M.Map TransformType (a :: interp)}
-
--- defaultState :: TransformState
--- defaultState = TransformState $ M.fromList [
---   (Translation, (0.0, 0.0)),
---   (Scaling, (1.0, 1.0)),
---   (Rotation, 0.0),
---   (FillColorChange, (RGB 0 0 0)),
---   (StrokeColorChange, (RGB 0 0 0)),
---   (StrokeWidthChange, 0) ]
-  
   
 
 -- take an anim, a delta time, and update the control value
@@ -252,7 +212,10 @@ compareTweenType t1 t2 = (tweenType t1) == (tweenType t2)
 
   
 traceMonad :: (Show a, Monad m) => a -> m a
-traceMonad x = traceStack ("test: " ++ show x) (return x)
+traceMonad x = traceStack (show x) (return x)
+
+traceMonadStr :: (Show a, Monad m) => String -> a -> m a
+traceMonadStr s x = traceStack (s ++ show x) (return x)
 
 -- NOTE THIS MIGHT BE A BAD IDEA
 -- lock a transition function so it doesn't vary with time and always returns the same value
@@ -260,6 +223,15 @@ lockTransition :: (AnimControl -> Content -> Content)
                -> AnimControl
                -> (AnimControl -> Content -> Content)
 lockTransition f t = \_ -> f t
+
+lockTween :: AnimControl -> Tween -> Tween
+lockTween val (Tween t ease f duration) = Tween t ease (lockTransition f val) duration
+
+deleteFirst :: (a -> Bool) -> [a] -> [a]
+deleteFirst _ []     = []
+deleteFirst f (x:xs) = if f x
+                       then xs
+                       else x : deleteFirst f xs
 
 chainAnimations :: [ChainTween]
                 -> Animation
@@ -271,64 +243,21 @@ chainAnimations chainsIn (Animation tweensIn c) = Animation newTweens c
     tweenPairs = zip tweensIn (map tweenType tweensIn)
     chainPairs = zip chainsIn (map chainType chainsIn)
 
-    -- for each chain:
-    -- look for a tween with the same type
-    -- if you find it:
-    -- get its final value and make a new tween
-    -- if you don't:
-    -- TODO: do nothing
-    
-    -- TODO track remaining tweens (probably with a set) in order to lock as appropriate
     chainLoop :: [(Tween, TransformType)] -> [(ChainTween, TransformType)] -> [Tween]
-    chainLoop _ [] = []
     chainLoop tweens (ch:chs) = case chainFunc tweens ch of
-      Just newTween -> newTween : chainLoop tweens chs
-      Nothing       -> chainLoop tweens chs
+      Just (newTween, remainingTweens) -> newTween : chainLoop remainingTweens chs
+      -- if no tween is matched, just make a tween from the default value
+      Nothing                          -> let ((f, v2, ease, duration), _) = ch -- extract current chain
+                                              v1 = defaultI v2 -- get default value
+                                          in (makeTween f v1 v2 ease duration) : chainLoop tweens chs
+    -- no chains left - lock all remaining tweens
+    chainLoop tweens [] = map (lockTween 1.0 . fst) tweens
 
-    -- okay, it works as long as they're passing the right subclass of I!
-    chainFunc :: [(Tween, TransformType)] -> (ChainTween, TransformType) -> Maybe Tween
+    chainFunc :: [(Tween, TransformType)] -> (ChainTween, TransformType) -> Maybe (Tween, [(Tween, TransformType)])
     chainFunc tweens ((fChain, v2, ease, duration), chainTy) = do
-      -- g <- traceMonad $ length $ filter (\(_, ty) -> ty == chainTy) tweens
-
       ((Tween _ _ fTween _), foundType) <- find (\(_, ty) -> ty == chainTy) tweens
-      _ <- traceMonad chainTy
-      _ <- traceMonad foundType
-      _ <- traceMonad $ tweenFuncType fTween
       lastVal <- extractInterp fTween 1.0
-      return $ makeTween fChain lastVal v2 ease duration
-
-    findMatchingTween :: [(Tween, TransformType)] -> TransformType -> Maybe (Tween, TransformType)
-    findMatchingTween tweens chainTy = find (\(_, tweenTy) -> tweenTy == chainTy) tweens
-
-                
-
--- need to extract final value from chained tween
--- chainAnimations :: (Interpolate interpolate)
---                 => [ChainTween interpolate]
---                 -> Animation
---                 -> Animation
--- chainAnimations chains (Animation tweens c) = Animation newTweens c
---   where
---     newTweens = chain tweens chains
---     chainPairs = zip chains (map chainType chains)
---     tweenPairs = zip tweens (map tweenType tweens)
---     now want to make a  [(Tween, ChainTween)] set
---     intersected = intersectBy (\(_, ty1) (_, ty2) -> ty1 == ty2) chainPairs tweenPairs
-
--- take a transformation function and extract the value fed into it
--- extractInterp :: (Interpolate interp)
---               => (AnimControl -> Content -> Content)
---               -> AnimControl
---               -> Maybe interp
--- extractInterp f t = extract (f t Empty)
---   where
---     extract (Translate x y _)     = Just (x, y)
---     extract (Scale     x y _)     = Just (x, y)
---     extract (Rotate theta _)      = Just theta
---     extract (FillColor   color _) = Just color
---     extract (StrokeColor color _) = Just color
---     extract (StrokeWidth width _) = Just width
---     extract _                     = Nothing
+      return $ (makeTween fChain lastVal v2 ease duration, deleteFirst (\(_, ty) -> ty == chainTy) tweens)
 
 
 -- extract the interp data fed into the *outer layer* of the render function. 
@@ -345,13 +274,6 @@ extractInterp f t = extract (f t Empty)
     extract (StrokeWidth width _) = Just $ DoubleI width
     extract _                     = Nothing
 
--- chainTween :: (Interpolate interpolate)
---            => (interpolate -> interpolate -> AnimControl -> Content -> Content)
---            -> interpolate
---            -> Ease
---            -> Int
---            -> ChainTween interpolate
--- chainTween f v1 ease duration = (f, v1, ease, duration)
 chainTween :: (I -> I -> AnimControl -> Content -> Content)
            -> I
            -> Ease
@@ -365,12 +287,6 @@ makeTweenFunction :: (I -> I -> AnimControl -> Content -> Content)
                   -> I
                   -> (AnimControl -> Content -> Content)
 makeTweenFunction f v0 v1 = \t -> f v0 v1 t
--- makeTweenFunction :: (Interpolate interpolate)
---                   => (interpolate -> interpolate -> AnimControl -> Content -> Content)
---                   -> interpolate
---                   -> interpolate
---                   -> (AnimControl -> Content -> Content)
--- makeTweenFunction f v0 v1 = \t -> f v0 v1 t
 
 makeTween :: (I -> I -> AnimControl -> Content -> Content)
           -> I
@@ -381,16 +297,6 @@ makeTween :: (I -> I -> AnimControl -> Content -> Content)
 makeTween render v0 v1 ease duration = Tween 0.0 ease tweenFunc duration
   where
     tweenFunc = makeTweenFunction render v0 v1
--- makeTween :: (Interpolate interpolate)
---           => (interpolate -> interpolate -> AnimControl -> Content -> Content)
---           -> interpolate
---           -> interpolate
---           -> Ease
---           -> Int
---           -> Tween
--- makeTween render v0 v1 ease duration = Tween 0.0 ease tweenFunc duration
---   where
---     tweenFunc = makeTweenFunction render v0 v1
 
 -- makeAnimation' :: (Interpolate interpolate)
 --                => [(Tween, interpolate)]

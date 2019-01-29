@@ -17,6 +17,7 @@ import GHCJS.DOM.EventM
 import GHCJS.DOM.Types hiding (Text, Event, Animation)
 import GHCJS.DOM.GlobalEventHandlers hiding (error)
 import GHCJS.DOM.CanvasRenderingContext2D
+  
 
 import Data.Monoid ((<>))
 import Control.Monad
@@ -168,7 +169,6 @@ slideshow ctx doc imageDB fps = do
   tick <- generateTick fps
   timeRef <- initTime
 
-  -- NOTE serious problem. At the moment you need to store the previous state at the beginning of every tween, and accumulate *all previous transforms*
   -- also need to somehow separate anims out between objects
   -- let anim1 = Animation [ makeTween tweenTranslate (100, 100) (600, 500) easeSin 2000000
   --                       , makeTween (tween FillColor) (RGB 255 0 0) (RGB 0 0 255) easeSin 2000000
@@ -182,14 +182,14 @@ slideshow ctx doc imageDB fps = do
   let anim1 = Animation [
         makeTween (tween (pairI Translate)) (PairI (100, 100)) (PairI (600, 500)) easeSin 2000000
         , makeTween (tween (pairI Scale)) (PairI (1, 1)) (PairI (2, 2)) easeSin 2000000
-        ,  makeTween (tween (colorI FillColor)) (ColorI (RGB 255 0 0)) (ColorI (RGB 0 255 0)) easeSin 2000000
-        , makeTween (tween (doubleI StrokeWidth)) (DoubleI 0) (DoubleI 10) easeSin 2000000
+        , makeTween (tween (colorI FillColor)) (ColorI (RGB 255 0 0)) (ColorI (RGB 0 255 0)) easeSin 2000000
+        -- , makeTween (tween (doubleI StrokeWidth)) (DoubleI 0) (DoubleI 10) easeSin 2000000
         ] $ FRect 100 100
   let animChain = chainAnimations [
         chainTween (tween (pairI Translate)) (PairI (400, 100)) easeSin 2000000
-        , chainTween (tween (pairI Scale)) (PairI (1, 1)) easeSin 2000000
-        , chainTween (tween (colorI FillColor)) (ColorI (RGB 0 0 255)) easeSin 2000000
-        , chainTween (tween (doubleI StrokeWidth)) (DoubleI 0) easeSin 2000000
+        -- , chainTween (tween (pairI Scale)) (PairI (1, 1)) easeSin 2000000
+        -- , chainTween (tween (colorI FillColor)) (ColorI (RGB 0 0 255)) easeSin 2000000
+        , chainTween (tween (doubleI StrokeWidth)) (DoubleI 10) easeSin 2000000
         ] anim1
 
   -- let updateA' = (pure updateAnimation) <@> tick
