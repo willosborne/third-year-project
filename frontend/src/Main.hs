@@ -176,7 +176,7 @@ helloMain = do
 
   -- runLife ctx doc
 
-  slideshow ctx doc imageDB 60
+  slide ctx doc imageDB 60
 
   -- syncPoint
 

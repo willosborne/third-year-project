@@ -35,6 +35,7 @@ Not THAT relevant, but does some neat stuff (mostly static image composition wit
 *** reactive-banana walkthrough https://wiki.haskell.org/FRP_explanation_using_reactive-banana
 ** Libraries
 * Tricky things
+** chaining
 Need to chain animations into each other, preserving properties set in previous tweens. 
 Need some concept of object state at end of each Tween
 Need to compare Tween objects to identify which is the same
@@ -50,5 +51,27 @@ What I want: to leave untouched the transforms that aren't modified
 Could: 
 loop through transforms
 remove any that are used - need to extract final value, though!
-turn any that are unused into consts 
+turn any that are unused into consts
+** switching between chained animations
+what i have: 
+- for each stage of the animation, i have an Animation object that I can render
+- a pure *updateAnimation* function which maps the state of an animation over time
+- an Event (Animation -> Animation) *updateA'* which can be used to accumulate an animation state over time
+  
 
+ultimately want:
+- Some concept of the *current* animation
+- A single behaviour which I can render that shows the current Animation
+- The ability to update the current animation through an event
+
+in some way i gotta impose an order on the animations, so that on the appropriate event it knows how to go to the 'next' step
+maybe list of Animations, current is defined by an integer?
+
+want to have a behaviour which contains the current animation
+then switch to update and render that animation
+
+
+idea
+make an accum function for each animation
+the tick event only updates them when it's told to
+also ability to reset animations

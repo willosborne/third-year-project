@@ -235,3 +235,9 @@ wordsToLines ctx maxWidth wordList = wordsToLinesInternal wordList ""
       case lineWordLength <= maxWidth of
         True        -> wordsToLinesInternal words lineWord
         _           -> (line :) <$> wordsToLinesInternal words word
+
+
+clearScreen :: CanvasRenderingContext2D -> IO ()
+clearScreen ctx = do
+  clearRect ctx 0 0 6000 4000
+  setTransform ctx 1 0 0 1 0 0 

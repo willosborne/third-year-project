@@ -20,6 +20,7 @@ import GHCJS.DOM.CanvasRenderingContext2D
   
 
 import Data.Monoid ((<>))
+import Data.List.Index (imapM)
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Concurrent
@@ -158,27 +159,27 @@ renderAnimationB ctx imageDB animsB = do
   anims <- sync $ sample animsB 
   renderContent ctx (renderAnimation anims) imageDB
 
-slideshow :: (IsEventTarget document, IsDocument document)
+indexOrLast :: [a] -> Int -> a
+indexOrLast list i
+  | i < length list = list !! i
+  | otherwise       = last list
+
+indexMaybe :: [a] -> Int -> Maybe a
+indexMaybe list i
+  | i < length list = Just $ list !! i
+  | otherwise       = Nothing
+
+slide :: (IsEventTarget document, IsDocument document)
           => CanvasRenderingContext2D
           -> document
           -> ImageDB
           -> Int
           -> IO ()
-slideshow ctx doc imageDB fps = do
+slide ctx doc imageDB fps = do
   Inputs { clicks=clicks, keyPressed=keyPressed, next=next, previous=previous } <- generateInputs doc
   tick <- generateTick fps
   timeRef <- initTime
 
-  -- also need to somehow separate anims out between objects
-  -- let anim1 = Animation [ makeTween tweenTranslate (100, 100) (600, 500) easeSin 2000000
-  --                       , makeTween (tween FillColor) (RGB 255 0 0) (RGB 0 0 255) easeSin 2000000
-  --                       , makeTween (tween StrokeWidth) 0 10 easeSin 2000000 ] $ FCircle 100
-  -- let anim1 = Animation [ makeTween (tween (pairI Translate)) (PairI (100, 100)) (PairI (600, 500)) easeSin 2000000
-  --                       , makeTween (tween (colorI FillColor)) (ColorI (RGB 255 0 0)) (ColorI (RGB 0 0 255)) easeSin 2000000
-  --                       , makeTween (tween (doubleI StrokeWidth)) (DoubleI 0) (DoubleI 10) easeSin 2000000 ] $ FCircle 100
-  -- let animChain = chainAnimations [ chainTween (tween (pairI Translate)) (PairI (400, 100)) easeSin 2000000
-  --                                 , chainTween (tween (colorI FillColor)) (ColorI (RGB 0 255 0)) easeSin 2000000
-  --                                 , chainTween (tween (doubleI StrokeWidth)) (DoubleI 0) easeSin 2000000 ] anim1
   let anim1 = Animation [
         makeTween (tween (pairI Translate)) (PairI (100, 100)) (PairI (600, 500)) easeSin 2000000
         , makeTween (tween (pairI Scale)) (PairI (1, 1)) (PairI (2, 2)) easeSin 2000000
@@ -191,12 +192,51 @@ slideshow ctx doc imageDB fps = do
         -- , chainTween (tween (colorI FillColor)) (ColorI (RGB 0 0 255)) easeSin 2000000
         , chainTween (tween (doubleI StrokeWidth)) (DoubleI 10) easeSin 2000000
         ] anim1
+  let animChain2 = chainAnimations [chainTween (tween (pairI Translate)) (PairI (800, 300)) easeSin 2000000] animChain
 
-  -- let updateA' = (pure updateAnimation) <@> tick
+  let anims = [anim1, animChain, animChain2]
+
   let updateA' = updateAnimation <$> tick
+  -- behaviour containing current index value
+  currentAnimIndexB <- accumB 0 ((+1) <$ clicks)
+  -- event for the same, fires whenever index value changes
+  -- currentAnimIndexE <- accumE 0 ((+1) <$ clicks)
 
-  a <- accumB anim1 updateA'
-  a' <- accumB animChain updateA'
+  -- tickIfActive is an event that ticks only when shouldTickB is currently True
+  let tickIfActive shouldTickB = whenE shouldTickB (tick)
+      -- update the anim only if shouldTickB is currently true
+      updateIfActiveE shouldTickB = whenE shouldTickB (updateAnimation <$> tick)
+      -- this takes an index and returns a behaviour that's true whenever currentAnimIndexB is equal to that index
+      shouldTick i = (i ==) <$> currentAnimIndexB
+
+  -- list of behaviours that accumulate correct state
+  -- TODO: just write my own version of this because I definitely don't need another dependency for this function
+  animsAccum <- imapM (\i anim -> accumB anim (updateIfActiveE (shouldTick i))) anims
+  let currentAnimB = switchB $ (animsAccum !!) <$> currentAnimIndexB
+  let currentAnimB = switchB $ (indexOrLast animsAccum) <$> currentAnimIndexB
+  
+  -- event that fires whenever current index value changes
+  -- changeAnim <- updates currentAnimIndex
+  -- -- Event (Animation) that fires with new current animation when it changes
+  -- let c = ((anims !!) <$> changeAnim)
+  -- cUpdated <- accumB c updateA'
+
+  -- currentAnimE <- hold anim1 cUpdated
+  -- let currentAnim = switchB currentAnimE
+   
+  -- let updateA' = (pure updateAnimation) <@> tick
+  -- updateAnimation :: Int -> Animation -> Animation
+  -- tick :: Event Int
+  -- updateA' :: Event (Animation -> Animation)
+
+  -- a <- accumB anim1 updateA'
+  -- aChain <- accumB animChain updateA'
+
+  -- -- choice :: Behaviour Bool
+  -- choice <- accumB False (not <$ clicks)
+  -- -- need a behaviour that points to current event
+  -- currentA <- accumB a ((\t -> if t then aChain else a) <$> choice)
+  -- let renderedA = switchB currentA
   -- b <- accumB anim2 updateA'
 
   -- NOTE: could use updates to reset animation on next event
@@ -205,13 +245,11 @@ slideshow ctx doc imageDB fps = do
 
 
   let loop = do
-        -- clear screen
-        clearRect ctx 0 0 6000 4000
-        setTransform ctx 1 0 0 1 0 0 
+        clearScreen ctx
         
-        renderAnimationB ctx imageDB a
-        renderAnimationB ctx imageDB a'
-        -- renderAnimationB ctx imageDB b
+        -- renderAnimationB ctx imageDB a
+        -- renderAnimationB ctx imageDB aChain
+        renderAnimationB ctx imageDB currentAnimB
 
         dtMs <- updateTime timeRef -- time in ms since last update
         let diff = (floor $ (1 / fromIntegral fps) * 1000) - dtMs
@@ -219,12 +257,3 @@ slideshow ctx doc imageDB fps = do
           threadDelay $ diff * 1000 -- convert to microsecs and delay by that amount
         loop
   loop
-
-
--- data Stage = Stage
-
--- type SlideM = StateT (Int, AnimControl) ReaderT [Stage] IO ()
-
-
--- renderSlide :: SlideM -> IO ()
--- renderSlide 
