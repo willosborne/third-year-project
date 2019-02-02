@@ -75,3 +75,45 @@ idea
 make an accum function for each animation
 the tick event only updates them when it's told to
 also ability to reset animations
+
+
+*SOLUTION*
+- animationIndex behaviour that changes with clicks
+- have a updateIfActive event that only updates the anim when animationIndex equals that animation's index 
+- for each animation, accumulate with updateIfActive and store in list
+- switch to return only currently active animation
+- only render that animation
+
+This only works for _one_ animation chain at the moment.
+Solutions for multiple objects:
+- multiple lists and index values
+  - requires passing in separate lists of anims, one for each object
+  - *problem* - don't want to run simultaneously!
+- ?
+
+ideally specify like this
+
+animation 1
+chain 1
+animation 2
+chain 2
+chain 2
+chain 1
+etc
+
+and each animation happens in the correct order
+we render a set of animations rather than just the one
+
+solutions:
+make makeAnimation also return a unique key to specify which animation they belong to. then pass that key through chains
+this can be used to separate into classes
+also accumulate an order number which animations are tagged with through list of *all* animations
+
+then have a separate list of anims for each class.
+for each class of anims:
+- render/update the *last* animation with an order key *less* than currentIndex
+  
+alternatively keep all animations in one list
+then render+update *one* of each class moving backwards through the list from currentIndex
+
+  

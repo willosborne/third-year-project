@@ -175,8 +175,37 @@ helloMain = do
   -- runReaderT (render ctx ((Image "egg" Original) <> (Translate 100 0 (Image "yoda" Original)))) imageDB
 
   -- runLife ctx doc
+  animA1 <- makeAnimationTagged [
+        makeTween (tween (pairI Translate)) (PairI (100, 100)) (PairI (600, 500)) easeSin 2000000
+        , makeTween (tween (pairI Scale)) (PairI (1, 1)) (PairI (2, 2)) easeSin 2000000
+        , makeTween (tween (colorI FillColor)) (ColorI (RGB 255 0 0)) (ColorI (RGB 0 255 0)) easeSin 2000000
+        -- , makeTween (tween (doubleI StrokeWidth)) (DoubleI 0) (DoubleI 10) easeSin 2000000
+        ] $ FRect 100 100
+  animA2 <- chainAnimationsTagged [
+        chainTween (tween (pairI Translate)) (PairI (400, 100)) easeSin 2000000
+        -- , chainTween (tween (pairI Scale)) (PairI (1, 1)) easeSin 2000000
+        -- , chainTween (tween (colorI FillColor)) (ColorI (RGB 0 0 255)) easeSin 2000000
+        , chainTween (tween (doubleI StrokeWidth)) (DoubleI 10) easeSin 2000000
+        ] animA1
+  animA3 <- chainAnimationsTagged [chainTween (tween (pairI Translate)) (PairI (800, 300)) easeSin 2000000] animA2
+  animA4 <- chainAnimationsTagged [chainTween (tween (pairI Translate)) (PairI (300, 500)) easeSin 2000000] animA3
 
-  slide ctx doc imageDB 60
+  animB1 <- makeAnimationTagged [
+        makeTween (tween (pairI Translate)) (PairI (400, 100)) (PairI (100, 500)) easeSin 2000000
+        , makeTween (tween (pairI Scale)) (PairI (1, 1)) (PairI (1.5, 2)) easeSin 2000000
+        , makeTween (tween (colorI FillColor)) (ColorI (RGB 255 0 0)) (ColorI (RGB 0 0 255)) easeSin 2000000
+        -- , makeTween (tween (doubleI StrokeWidth)) (DoubleI 0) (DoubleI 10) easeSin 2000000
+        ] $ FCircle 100
+  animB2 <- chainAnimationsTagged [chainTween (tween (pairI Translate)) (PairI (400, 300)) easeSin 2000000] animB1
+  animB3 <- chainAnimationsTagged [chainTween (tween (pairI Translate)) (PairI (200, 500)) easeSin 2000000,
+                                   chainTween (tween (colorI FillColor)) (ColorI (RGB 255 0 0)) easeSin 2000000] animB2
+  animB4 <- chainAnimationsTagged [chainTween (tween (pairI Translate)) (PairI (800, 100)) easeSin 2000000] animB3
+  yoda1 <- makeAnimationTagged [makeTween (tween (doubleI Rotate)) (DoubleI 0) (DoubleI 270) easeSin 3000000] $ Image "yoda" Original
+  yoda2 <- chainAnimationsTagged [chainTween (tween (doubleI Rotate)) (DoubleI 0) easeSin 2000000] yoda1
+
+  let anims = [animA1, animB1, yoda1, animA2, animB2, animA3, animB3, yoda2, animA4, animB4]
+
+  slide ctx doc imageDB 60 anims
 
   -- syncPoint
 

@@ -33,6 +33,8 @@ import Reactive.FRPSimple
 import Debug.Trace
 import Data.Typeable
 
+import Data.Unique
+
   
 type AnimControl = Double
 
@@ -163,7 +165,15 @@ type ChainTween = ((I -> I -> AnimControl -> Content -> Content), I, Ease, Int)
 
 -- data Animation = Animation AnimControl Ease [(AnimControl -> Content -> Content)] Content Int
 data Animation = Animation [Tween] Content
--- data Animation' interp = Animation' [Tween] Content TransformState
+
+makeAnimation :: [Tween] -> Content -> Animation
+makeAnimation = Animation
+
+
+makeAnimationTagged :: [Tween] -> Content -> IO (Animation, Unique)
+makeAnimationTagged tweens c = do
+  key <- newUnique
+  return ((makeAnimation tweens c), key)
   
 
 -- take an anim, a delta time, and update the control value
@@ -232,6 +242,11 @@ deleteFirst _ []     = []
 deleteFirst f (x:xs) = if f x
                        then xs
                        else x : deleteFirst f xs
+
+-- just pass on the key we were given
+chainAnimationsTagged :: [ChainTween] -> (Animation, Unique) -> IO (Animation, Unique)
+chainAnimationsTagged chains (anim, key) = do
+  return (chainAnimations chains anim, key)
 
 chainAnimations :: [ChainTween]
                 -> Animation

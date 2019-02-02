@@ -64,7 +64,7 @@ instance Applicative Behaviour where
 
   -- update: merge the two
   -- get value: extract function and value and return one applied to the other
-  bab <*> ba = Behaviour { behaviourUpdates = behaviourUpdates bab <>  behaviourUpdates ba
+  bab <*> ba = Behaviour { behaviourUpdates = behaviourUpdates bab <> behaviourUpdates ba
                          , behaviourGetValue = do
                              ab <- behaviourGetValue bab
                              a <- behaviourGetValue ba
@@ -261,3 +261,4 @@ filterE :: (a -> Bool) -> Event a -> Event a
 filterE p ea = Event (\listener -> eventRegisterListener ea $ \x ->
                          when (p x) $ listener x)
                        
+-- filterBList :: (a -> Bool) -> [Behaviour a] -> [Behaviour a]
