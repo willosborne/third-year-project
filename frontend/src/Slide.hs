@@ -26,6 +26,7 @@ import Data.List.Index (imap, imapM)
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Concurrent
+import Control.Applicative
 
 import Data.Typeable
 
@@ -89,13 +90,6 @@ generateTick fps = do
 
   return tick
 
-
--- tweenX :: Double -> Double -> AnimControl -> Content -> Content
--- tweenX x0 x1 t c = Translate x 200 c
---   where
---     x = lerp x0 x1 t
-
-
 -- tweenTranslate :: (Double, Double) -> (Double, Double) -> AnimControl -> Content -> Content
 -- tweenTranslate = tween (pair Translate)
 
@@ -139,12 +133,13 @@ tween property v0 v1 t c = property v c
   where
     v = interpolate' v0 v1 t
 
--- sample an Animation behaviour and render it, all in one go.
+-- |Sample a 'Behaviour Animation' and render it, all in one go.
 renderAnimationB :: CanvasRenderingContext2D -> ImageDB -> Behaviour Animation -> IO ()
 renderAnimationB ctx imageDB animB = do
   anim <- sync $ sample animB 
   renderContent ctx (renderAnimation anim) imageDB
 
+-- |Sample a 'Behaviour' containing a tagged and indexed 'Animation' and render it.
 renderTaggedIndexedAnimationB :: CanvasRenderingContext2D
                               -> ImageDB
                               -> Behaviour (Int, (Animation, Unique))
@@ -153,6 +148,7 @@ renderTaggedIndexedAnimationB ctx imageDB animB = do
   (_, (anim, _)) <- sync $ sample animB
   renderContent ctx (renderAnimation anim) imageDB
 
+-- |Sample and render a list of tagged, indexed animation 'Behaviour's.
 renderAnimationBListB :: CanvasRenderingContext2D
                      -> ImageDB
                      -> Behaviour [Behaviour (Int, (Animation, Unique))]
@@ -161,6 +157,7 @@ renderAnimationBListB ctx imageDB animsBListB = do
   animsBList <- sync $ sample animsBListB
   mapM_ (renderTaggedIndexedAnimationB ctx imageDB) animsBList
 
+-- |Like 'updateAnimation', but for tagged, indexed versions.
 updateTaggedIndexedAnimation :: Int -> (Int, (Animation, Unique)) -> (Int, (Animation, Unique))
 updateTaggedIndexedAnimation dt (i, (anim, key)) = (i, (updateAnimation dt anim, key))
 
@@ -287,8 +284,13 @@ slide ctx doc imageDB fps anims = do
   -- fmap animActive (f AnimData) :: f (Int -> Bool)
   -- fmap animActive (f AnimData) <*> currentAnimIndexB :: f Bool
   -- currentAnimsB :: Behaviour [Behaviour (Int, (Animation, Unique))]
+  -- let currentAnimsB = filterM (\animB -> (animActive <$> animB) <*> currentAnimIndexB) animsB
+
   -- this is a behaviour containing the set of currently active animations (i.e. the set to render)
-  let currentAnimsB = filterM (\animB -> (animActive <$> animB) <*> currentAnimIndexB) animsB
+  -- filter out animations that aren't currently active.
+  -- here, liftA2 allows us to pass animActive (no concept of Behaviours) and two Behaviour-wrapped values
+  -- alternative is animActive <$> animB <*> currentAnimIndexB
+  let currentAnimsB = filterM (\animB -> liftA2 animActive animB currentAnimIndexB) animsB
 
   let loop = do
         clearScreen ctx
