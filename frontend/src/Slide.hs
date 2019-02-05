@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns, RecursiveDo #-}
 module Slide where
 
 import Content
@@ -17,13 +18,14 @@ import GHCJS.DOM.EventM
 import GHCJS.DOM.Types hiding (Text, Event, Animation)
 import GHCJS.DOM.GlobalEventHandlers hiding (error)
 import GHCJS.DOM.CanvasRenderingContext2D
-  
 
 import Data.Monoid ((<>))
 import Data.Unique
-import Data.List (nub)
+import Data.List (nub, foldl')
 import Data.List.Index (imap, imapM)
 import Control.Monad
+import Control.Monad.Trans
+import Control.Monad.Writer hiding (listen)
 import Control.Monad.IO.Class
 import Control.Concurrent
 import Control.Applicative
@@ -36,13 +38,15 @@ data Inputs = Inputs {
   clicks :: Event (Int, Int),
   keyPressed :: Event Key,
   next :: Event (),
-  previous :: Event ()
+  previous :: Event (),
+  tick :: Event Int
   }
 
 generateInputs :: (IsEventTarget document, IsDocument document)
                => document
+               -> Int
                -> IO Inputs
-generateInputs doc = do
+generateInputs doc fps = do
   (click, sendClick) <- newEvent
   (keyPressed, sendKeyPressed) <- newEvent
   (mouseXY, sendMouseXY) <- newEvent
@@ -51,6 +55,8 @@ generateInputs doc = do
   
   bMouseXY <- hold (0, 0) mouseXY
   let clicks = bMouseXY <@ click
+
+  tick <- generateTick fps
 
   _ <- on doc mouseUp $ do
     (x, y) <- mouseClientXY
@@ -75,7 +81,7 @@ generateInputs doc = do
         _ -> return ()
     
 
-  return Inputs {clicks=clicks, keyPressed=keyPressed, next=next, previous=previous}
+  return Inputs {clicks=clicks, keyPressed=keyPressed, next=next, previous=previous, tick=tick}
 
 -- |Return a tick event that fires based on the FPS, returning the time since last tick each time in milliseconds
 generateTick :: Int -> IO (Event Int)
@@ -171,33 +177,18 @@ indexMaybe list i
   | i < length list = Just $ list !! i
   | otherwise       = Nothing
 
-slide :: (IsEventTarget document, IsDocument document)
-          => CanvasRenderingContext2D
-          -> document
-          -> ImageDB
-          -> Int
-          -> [(Animation, Unique)]
-          -> IO ()
-slide ctx doc imageDB fps anims = do
-  Inputs { clicks=clicks, keyPressed=keyPressed, next=next, previous=previous } <- generateInputs doc
-  tick <- generateTick fps
+slide :: [(Animation, Unique)]
+      -> CanvasRenderingContext2D
+      -> document
+      -> ImageDB
+      -> Inputs
+      -> Int
+      -> IO ((IO (), Event (), Event ())) -- render, previous slide, next slide
+slide anims ctx doc imageDB inputs fps = do
+  let Inputs { clicks=clicks, keyPressed=keyPressed, next=next, previous=previous, tick=tick } = inputs
+  
   timeRef <- initTime
-
-  -- let anim1 = Animation [
-  --       makeTween (tween (pairI Translate)) (PairI (100, 100)) (PairI (600, 500)) easeSin 2000000
-  --       , makeTween (tween (pairI Scale)) (PairI (1, 1)) (PairI (2, 2)) easeSin 2000000
-  --       , makeTween (tween (colorI FillColor)) (ColorI (RGB 255 0 0)) (ColorI (RGB 0 255 0)) easeSin 2000000
-  --       -- , makeTween (tween (doubleI StrokeWidth)) (DoubleI 0) (DoubleI 10) easeSin 2000000
-  --       ] $ FRect 100 100
-  -- let animChain = chainAnimations [
-  --       chainTween (tween (pairI Translate)) (PairI (400, 100)) easeSin 2000000
-  --       -- , chainTween (tween (pairI Scale)) (PairI (1, 1)) easeSin 2000000
-  --       -- , chainTween (tween (colorI FillColor)) (ColorI (RGB 0 0 255)) easeSin 2000000
-  --       , chainTween (tween (doubleI StrokeWidth)) (DoubleI 10) easeSin 2000000
-  --       ] anim1
-  -- let animChain2 = chainAnimations [chainTween (tween (pairI Translate)) (PairI (800, 300)) easeSin 2000000] animChain
-
-  -- let anims = [anim1, animChain, animChain2]
+  -- (nextSlideE, fireNextSlideE) <- newEvent
 
   -- -- behaviour containing current index value
   -- currentAnimIndexB <- accumB 0 ((+1) <$ clicks)
@@ -219,8 +210,9 @@ slide ctx doc imageDB fps anims = do
 
   -- unique classes
   -- let classes = nub $ map snd anims
+  -- TODO could do this with zip and [0..]
   let animsIndexed = imap (\i pair -> (i, pair)) anims
-  putStrLn $ show $ map fst animsIndexed
+  -- putStrLn $ show $ map fst animsIndexed
 
   -- a list of (Int, (Animation, Unique)) pairs
 
@@ -251,11 +243,14 @@ slide ctx doc imageDB fps anims = do
       --   return $ filter (\a -> animActive a i) as
 
   -- behaviour containing current index value
-  currentAnimIndexB <- accumB 0 ((+1) <$ clicks)
-
-  _ <- listenToBehaviour currentAnimIndexB (\new -> liftIO $ putStrLn (show new)) 
+  currentAnimIndexB <- accumB 0 (((+1) <$ next) <> ((subtract 1) <$ previous))
   -- event for the same, fires whenever index value changes
-  -- currentAnimIndexE <- accumE 0 ((+1) <$ clicks)
+  currentAnimIndexE <- accumE 0 (((+1) <$ next) <> ((subtract 1) <$ previous))
+
+  let nextSlideE = () <$ filterE (> (length anims)) currentAnimIndexE
+  let prevSlideE = () <$ filterE (< 0) currentAnimIndexE
+
+  -- _ <- listenToBehaviour currentAnimIndexB (\new -> liftIO $ putStrLn (show new)) 
 
   -- update the anim only if shouldTickB is currently true
   let updateIfActiveE shouldTickB = whenE shouldTickB (updateTaggedIndexedAnimation <$> tick)
@@ -302,5 +297,88 @@ slide ctx doc imageDB fps anims = do
         let diff = (floor $ (1 / fromIntegral fps) * 1000) - dtMs
         when (diff > 0) $ do
           threadDelay $ diff * 1000 -- convert to microsecs and delay by that amount
+        -- loop
+  -- loop
+  return (loop, prevSlideE, nextSlideE)
+
+
+type SlideFunc document = CanvasRenderingContext2D -> document -> ImageDB -> Inputs -> Int -> IO (IO (), Event (), Event ())
+
+-- we collect a list of rendering functions - animations etc are already passed in
+type SlideWriter document = WriterT [SlideFunc document]
+                            IO ()
+
+-- type AnimWriter = Writer [(Animation, Unique)]                           
+
+-- slideWW :: (IsEventTarget document, IsDocument document)
+--         => AnimWriter
+--         -> SlideWriter document
+-- slideWW animWriter = do
+--   let anims = execWriter animWriter
+--       out = slide anims
+--   tell [out]
+  
+slideW :: (IsEventTarget document, IsDocument document)
+       => [(Animation, Unique)]
+       -> SlideWriter document
+slideW anims = do
+  let out = slide anims
+  tell [out]
+
+-- generate a new Inputs with events that only fire when index is right
+modifyInputs :: Inputs -> Behaviour Int -> Int -> Inputs
+modifyInputs (Inputs {clicks,
+                      keyPressed,
+                      next,
+                      previous,
+                      tick}) currentIndexB i = out
+  where
+    out = Inputs { clicks=clicks',
+                   keyPressed=keyPressed',
+                   next=next',
+                   previous=previous',
+                   tick=tick' }
+    clicks' = whenE shouldTickB clicks
+    keyPressed' = whenE shouldTickB keyPressed
+    next' = whenE shouldTickB next
+    previous' = whenE shouldTickB previous
+    tick' = whenE shouldTickB tick
+    shouldTickB = (i ==) <$> currentIndexB
+
+slideshow :: (IsEventTarget document, IsDocument document)
+          => CanvasRenderingContext2D
+          -> document
+          -> ImageDB
+          -> Int
+          -> SlideWriter document
+          -> IO ()
+slideshow ctx doc imageDB fps slideWriter = mdo
+  slideFuncs <- execWriterT slideWriter
+  -- slideFuncs :: [SlideFunc document]
+  baseInputs <- generateInputs doc fps
+
+  -- problem: i have a circular dependency
+  slides <- imapM (\i f -> f ctx doc imageDB (modifyInputs baseInputs currentIndexB i) fps) slideFuncs
+  let action (a, _, _) = a
+      prev   (_, p, _) = p
+      next   (_, _, n) = n
+
+      nextE = foldl' (<>) never (map next slides)
+      prevE = foldl' (<>) never (map prev slides)
+
+      -- slidesIndexed = zip [0..] slides
+
+  currentIndexB <- accumB 0 (((+1) <$ nextE) <> ((subtract 1) <$ prevE))
+  let currentSlideB = (slides !!) <$> currentIndexB
+  
+  -- slides :: (IO (), Event (), Event ())
+  -- next steps: actually evaluate the slide functions to get actions and events
+  -- modify step events to only update when slide is active
+
+  let loop = do
+        currentSlide <- sync $ sample currentSlideB
+        action currentSlide
         loop
   loop
+  -- slides :: [(render, previous, next)]
+  

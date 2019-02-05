@@ -37,6 +37,7 @@ import Slide
 import Life
 -- import Control.Monad.Reader
 import Control.Concurrent
+import Control.Monad.Writer
 -- import Control.Concurrent.MVar (newMVar, modifyMVar, modifyMVar_)
 
 run :: a -> a
@@ -106,6 +107,17 @@ ball :: Content
 ball = (FillColor (RGB 255 0 0) $ StrokeWidth 2 $ FCircle 100)
     <> (Translate 0 100 $ Image "egg" Original)
 
+test :: Writer [String] ()
+test = do
+  tell ["yeet"]
+  return ()
+
+testWrite :: [String]
+testWrite = execWriter $ do
+  test
+  test
+  test
+
       
 helloMain :: IO ()
 helloMain = do
@@ -115,6 +127,7 @@ helloMain = do
 
   timeRef <- initTime
 
+  putStrLn $ show $ testWrite
 
   -- forkIO $ do
   --   threadDelay 5000000
@@ -179,12 +192,9 @@ helloMain = do
         makeTween (tween (pairI Translate)) (PairI (100, 100)) (PairI (600, 500)) easeSin 2000000
         , makeTween (tween (pairI Scale)) (PairI (1, 1)) (PairI (2, 2)) easeSin 2000000
         , makeTween (tween (colorI FillColor)) (ColorI (RGB 255 0 0)) (ColorI (RGB 0 255 0)) easeSin 2000000
-        -- , makeTween (tween (doubleI StrokeWidth)) (DoubleI 0) (DoubleI 10) easeSin 2000000
         ] $ FRect 100 100
   animA2 <- chainAnimationsTagged [
         chainTween (tween (pairI Translate)) (PairI (400, 100)) easeSin 2000000
-        -- , chainTween (tween (pairI Scale)) (PairI (1, 1)) easeSin 2000000
-        -- , chainTween (tween (colorI FillColor)) (ColorI (RGB 0 0 255)) easeSin 2000000
         , chainTween (tween (doubleI StrokeWidth)) (DoubleI 10) easeSin 2000000
         ] animA1
   animA3 <- chainAnimationsTagged [chainTween (tween (pairI Translate)) (PairI (800, 300)) easeSin 2000000] animA2
@@ -205,7 +215,10 @@ helloMain = do
 
   let anims = [animA1, animB1, yoda1, animA2, animB2, animA3, animB3, yoda2, animA4, animB4]
 
-  slide ctx doc imageDB 60 anims
+  -- inputs <- generateInputs doc 60
 
-  -- syncPoint
+  -- (s1Loop, s1Prev, s1Next) <- slide anims ctx doc imageDB inputs 60 
 
+  slideshow ctx doc imageDB 60 $ do
+    slideW anims
+    slideW anims

@@ -115,5 +115,65 @@ for each class of anims:
   
 alternatively keep all animations in one list
 then render+update *one* of each class moving backwards through the list from currentIndex
+** switching between slides
+Each slide calls generateEvents to get event triggers.
+Ideally only do this once.
 
-  
+Could pass in an Inputs on slide creation
+Return loop function which just renders and delays as appropriate
+
+How are these functions called?
+
+Ideally want to go 
+#+BEGIN_SRC haskell
+slideshow (args) $ do
+   slide $ do
+     animation
+     animation
+     etc...
+   slide [ ]
+#+END_SRC
+
+slide IO functions take a list of animations and have ctx, etc hidden
+ie what slideshow expects is a list of:
+CTX -> ImageDB -> FPS -> Inputs
+
+ie it takes a function and builds up a list of slide IO actions
+
+
+ok so each slide function should take an Inputs modified to only fire when that slide is active
+
+*NOTE*: we also want to only update the relevant slide! 
+*NOTE*: also consider how we want to reset slides
+
+also: how do we advance to the next slide once the end of the current one is reached?
+do we fire an event?
+
+render function is a Behaviour IO () - returns a ~loop~ action which encapsulates all the slide's logic
+~slide~ function could also return an event that's fired when there are no more animations to render?
+
+list of (render, prevSlide, nextSlide) tuples - one for each slide
+NOTE: this will not allow slides to be reset
+
+once we have a list of slides we need an index behaviour
+this behaviour should be updated only when the previous or next event of the current slide event fires
+
+jesus christ
+
+ok so for ez syntax:
+
+
+
+take a SlideWriter as an argument - that can then be exec'd to give you a list of values.
+unless the slide function includes ~Writer~ this then requires a tell statement before every slide def
+
+so slideW returns a WriterT for the entire function to return
+
+idea: change the slide when *any* of the next events fire
+next event will only fire on the current slide anyway!
+
+*PROBLEM*: circular dependency!
+currentSlideIndex depends on nextE and prevE events 
+these events are constructed by the ~slide~ function
+this function requires ~Inputs~, except we need to map ~Inputs~ to only fire when ~currentSlideIndex~ is equal
+currentSlideIndex -> nextE -> slide -> modifyInputs -> currentSlideIndex
