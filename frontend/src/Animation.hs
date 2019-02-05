@@ -327,6 +327,12 @@ makeTween render v0 v1 ease duration = Tween 0.0 ease tweenFunc duration
   where
     tweenFunc = makeTweenFunction render v0 v1
 
+fix :: (I -> Content -> Content)
+     -> I
+     -> Tween
+fix render v = Tween 0.0 id func 1
+  where
+    func = \t -> render v
 -- makeAnimation' :: (Interpolate interpolate)
 --                => [(Tween, interpolate)]
 --                -> TransformState

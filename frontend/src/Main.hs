@@ -37,7 +37,7 @@ import Slide
 import Life
 -- import Control.Monad.Reader
 import Control.Concurrent
-import Control.Monad.Writer
+import Control.Monad.Writer hiding (fix)
 -- import Control.Concurrent.MVar (newMVar, modifyMVar, modifyMVar_)
 
 run :: a -> a
@@ -223,7 +223,8 @@ helloMain = do
     slideW anims
     tell [lifeSlide]
     slideWW $ do
-      c <- makeAnimationW [makeTween (tween (pairI Translate)) (PairI (100, 100)) (PairI (600, 500)) easeSin 2000000] $ FCircle 100
-      r <- makeAnimationW [makeTween (tween (colorI FillColor)) (ColorI (RGB 255 0 0)) (ColorI (RGB 0 255 0)) easeSin 1000000] $ FRect 100 100
+      c <- makeAnimationW [ makeTween (tween (pairI Translate)) (PairI (100, 100)) (PairI (600, 500)) easeSin 2000000
+                          , fix (colorI FillColor) (ColorI (RGB 0 0 255)) ] $ FCircle 100
+      r <- makeAnimationW [ makeTween (tween (colorI FillColor)) (ColorI (RGB 255 0 0)) (ColorI (RGB 0 255 0)) easeSin 1000000] $ FRect 100 100
       chainAnimationW [ chainTween (tween (pairI Translate)) (PairI (400, 300)) easeSin 2000000] c
       chainAnimationW [ chainTween (tween (pairI Translate)) (PairI (800, 600)) easeSin 2000000] r

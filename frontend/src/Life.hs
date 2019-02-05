@@ -113,7 +113,6 @@ lifeSlide ctx doc db inputs fps = do
 
   _ <- forkIO $ forever $ do
     threadDelay 200000
-    putStrLn "Tick!"
     sync $ sendTick ()
 
   -- _ <- on doc keyUp $ do

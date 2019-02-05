@@ -351,11 +351,11 @@ slideshow :: (IsEventTarget document, IsDocument document)
           -> SlideWriter document
           -> IO ()
 slideshow ctx doc imageDB fps slideWriter = mdo
+  -- NB use of recursive do to avoid circular definition
   slideFuncs <- execWriterT slideWriter
   -- slideFuncs :: [SlideFunc document]
   baseInputs <- generateInputs doc fps
 
-  -- problem: i have a circular dependency
   slides <- imapM (\i f -> f ctx doc imageDB (modifyInputs baseInputs currentIndexB i) fps) slideFuncs
   let action (a, _, _) = a
       prev   (_, p, _) = p
@@ -364,19 +364,12 @@ slideshow ctx doc imageDB fps slideWriter = mdo
       nextE = foldl' (<>) never (map next slides)
       prevE = foldl' (<>) never (map prev slides)
 
-      -- slidesIndexed = zip [0..] slides
-
   currentIndexB <- accumB 0 (((+1) <$ nextE) <> ((subtract 1) <$ prevE))
   let currentSlideB = (slides !!) <$> currentIndexB
-  
-  -- slides :: (IO (), Event (), Event ())
-  -- next steps: actually evaluate the slide functions to get actions and events
-  -- modify step events to only update when slide is active
 
   let loop = do
         currentSlide <- sync $ sample currentSlideB
         action currentSlide
         loop
   loop
-  -- slides :: [(render, previous, next)]
   
