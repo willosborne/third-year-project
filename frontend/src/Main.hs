@@ -221,4 +221,9 @@ helloMain = do
 
   slideshow ctx doc imageDB 60 $ do
     slideW anims
-    slideW anims
+    tell [lifeSlide]
+    slideWW $ do
+      c <- makeAnimationW [makeTween (tween (pairI Translate)) (PairI (100, 100)) (PairI (600, 500)) easeSin 2000000] $ FCircle 100
+      r <- makeAnimationW [makeTween (tween (colorI FillColor)) (ColorI (RGB 255 0 0)) (ColorI (RGB 0 255 0)) easeSin 1000000] $ FRect 100 100
+      chainAnimationW [ chainTween (tween (pairI Translate)) (PairI (400, 300)) easeSin 2000000] c
+      chainAnimationW [ chainTween (tween (pairI Translate)) (PairI (800, 600)) easeSin 2000000] r

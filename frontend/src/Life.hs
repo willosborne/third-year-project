@@ -1,3 +1,4 @@
+{-# LANGUAGE NamedFieldPuns #-}
 module Life where
 
 import Reactive.FRPSimple
@@ -6,6 +7,7 @@ import Content
 import Input
 import Render
 import GHCJSTime
+import Slide
 
 import Web.KeyCode
 
@@ -84,6 +86,55 @@ renderGrid grid = Translate 10.5 10.5 $ foldr (<>) Empty $ fmap (foldr (<>) Empt
       FRect (fromIntegral cellSize) (fromIntegral cellSize)
     renderCell x y False = Empty
                                      
+lifeSlide :: (IsEventTarget target, IsDocument target) => SlideFunc target
+lifeSlide ctx doc db inputs fps = do
+  -- animStartTime <- getTime
+  timeRef <- initTime
+
+  let Inputs {clicks, keyPressed, tick} = inputs
+      pause = () <$ filterE (== Space) keyPressed
+      nextE = () <$ filterE (== ArrowRight) keyPressed
+      prevE = () <$ filterE (== ArrowLeft) keyPressed
+
+  -- (pause, sendPause) <- newEvent
+  -- (nextE, sendNextE) <- newEvent
+  -- (prevE, sendPrevE) <- newEvent
+  
+  (tick, sendTick) <- newEvent
+
+  active <- accumB False (not <$ pause)
+
+  let steps = whenE active (step <$ tick)
+      modifies = modify . adjust <$> clicks
+      changes = steps <> modifies
+  life <- accumE start changes
+
+  bLife <- hold start life
+
+  _ <- forkIO $ forever $ do
+    threadDelay 200000
+    putStrLn "Tick!"
+    sync $ sendTick ()
+
+  -- _ <- on doc keyUp $ do
+  --   key <- keyCodeLookup . fromIntegral <$> uiKeyCode
+  --   liftIO $ when (key == Space) $ sync $ sendPause ()
+
+  let loop = do
+
+        clearRect ctx 0 0 6000 4000
+        setTransform ctx 1 0 0 1 0 0 
+
+        g <- sync $ sample bLife
+        
+        renderContent ctx (renderGrid g) db
+
+
+        dtMs <- updateTime timeRef
+        let diff = (floor $ (1 / fromIntegral fps) * 1000) - dtMs
+        when (diff > 0) $ do
+          threadDelay $ diff * 1000 -- convert to microsecs and delay by that amount
+  return (loop, prevE, nextE)
 
 runLife :: (IsEventTarget target, IsDocument target)
         => CanvasRenderingContext2D

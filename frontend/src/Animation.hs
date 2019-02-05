@@ -20,6 +20,7 @@ import Control.Monad.Reader
 import Control.Concurrent
 import Control.Concurrent.MVar (newMVar, modifyMVar, modifyMVar_)
 import Control.Monad.Writer
+import Control.Monad.Trans
   
 import Data.Foldable (foldrM, find)
 import Data.List (deleteBy)
@@ -175,6 +176,12 @@ makeAnimationTagged :: [Tween] -> Content -> IO (Animation, Unique)
 makeAnimationTagged tweens c = do
   key <- newUnique
   return ((makeAnimation tweens c), key)
+
+makeAnimationW :: [Tween] -> Content -> WriterT [(Animation, Unique)] IO ((Animation, Unique))
+makeAnimationW tweens c = do
+  anim <- liftIO $ makeAnimationTagged tweens c
+  tell [anim]
+  return anim
   
 
 -- take an anim, a delta time, and update the control value
@@ -248,6 +255,12 @@ deleteFirst f (x:xs) = if f x
 chainAnimationsTagged :: [ChainTween] -> (Animation, Unique) -> IO (Animation, Unique)
 chainAnimationsTagged chains (anim, key) = do
   return (chainAnimations chains anim, key)
+
+chainAnimationW :: [ChainTween] -> (Animation, Unique) -> WriterT [(Animation, Unique)] IO ((Animation, Unique))
+chainAnimationW chains ak = do
+  chained <- liftIO $ chainAnimationsTagged chains ak
+  tell [chained]
+  return chained
 
 chainAnimations :: [ChainTween]
                 -> Animation

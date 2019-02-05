@@ -247,7 +247,7 @@ slide anims ctx doc imageDB inputs fps = do
   -- event for the same, fires whenever index value changes
   currentAnimIndexE <- accumE 0 (((+1) <$ next) <> ((subtract 1) <$ previous))
 
-  let nextSlideE = () <$ filterE (> (length anims)) currentAnimIndexE
+  let nextSlideE = () <$ filterE (>= (length anims)) currentAnimIndexE
   let prevSlideE = () <$ filterE (< 0) currentAnimIndexE
 
   -- _ <- listenToBehaviour currentAnimIndexB (\new -> liftIO $ putStrLn (show new)) 
@@ -297,8 +297,6 @@ slide anims ctx doc imageDB inputs fps = do
         let diff = (floor $ (1 / fromIntegral fps) * 1000) - dtMs
         when (diff > 0) $ do
           threadDelay $ diff * 1000 -- convert to microsecs and delay by that amount
-        -- loop
-  -- loop
   return (loop, prevSlideE, nextSlideE)
 
 
@@ -308,15 +306,15 @@ type SlideFunc document = CanvasRenderingContext2D -> document -> ImageDB -> Inp
 type SlideWriter document = WriterT [SlideFunc document]
                             IO ()
 
--- type AnimWriter = Writer [(Animation, Unique)]                           
+type AnimWriter = WriterT [(Animation, Unique)] IO ((Animation, Unique))
 
--- slideWW :: (IsEventTarget document, IsDocument document)
---         => AnimWriter
---         -> SlideWriter document
--- slideWW animWriter = do
---   let anims = execWriter animWriter
---       out = slide anims
---   tell [out]
+slideWW :: (IsEventTarget document, IsDocument document)
+        => AnimWriter
+        -> SlideWriter document
+slideWW animWriter = do
+  anims <- liftIO $ execWriterT animWriter
+  let out = slide anims
+  tell [out]
   
 slideW :: (IsEventTarget document, IsDocument document)
        => [(Animation, Unique)]
