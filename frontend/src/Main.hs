@@ -15,7 +15,7 @@ import GHCJS.DOM.HTMLCanvasElement (getContext)
 import GHCJS.DOM.NonElementParentNode (getElementById)
 -- import Control.Monad.IO.Class (MonadIO(..))
 
-import Web.KeyCode (Key(..))
+-- import Web.KeyCode (Key(..))
 
 import Data.Monoid ((<>))
 -- import Data.IORef
@@ -31,12 +31,12 @@ import Image
 import ImagePreloader
 import Animation
 import GHCJSTime
-import Input
+-- import Input
 import Slide
 
 import Life
 -- import Control.Monad.Reader
-import Control.Concurrent
+-- import Control.Concurrent
 import Control.Monad.Writer hiding (fix)
 -- import Control.Concurrent.MVar (newMVar, modifyMVar, modifyMVar_)
 
@@ -123,7 +123,7 @@ helloMain :: IO ()
 helloMain = do
   win <- currentWindowUnchecked
   doc <- currentDocumentUnchecked
-  body <- getBodyUnchecked doc
+  -- body <- getBodyUnchecked doc
 
   timeRef <- initTime
 

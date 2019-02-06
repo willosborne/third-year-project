@@ -87,7 +87,7 @@ renderGrid grid = Translate 10.5 10.5 $ foldr (<>) Empty $ fmap (foldr (<>) Empt
     renderCell x y False = Empty
                                      
 lifeSlide :: (IsEventTarget target, IsDocument target) => SlideFunc target
-lifeSlide ctx doc db inputs fps = do
+lifeSlide ctx doc db inputs activeB fps = do
   -- animStartTime <- getTime
   timeRef <- initTime
 
@@ -96,10 +96,6 @@ lifeSlide ctx doc db inputs fps = do
       nextE = () <$ filterE (== ArrowRight) keyPressed
       prevE = () <$ filterE (== ArrowLeft) keyPressed
 
-  -- (pause, sendPause) <- newEvent
-  -- (nextE, sendNextE) <- newEvent
-  -- (prevE, sendPrevE) <- newEvent
-  
   (tick, sendTick) <- newEvent
 
   active <- accumB False (not <$ pause)
@@ -113,7 +109,8 @@ lifeSlide ctx doc db inputs fps = do
 
   _ <- forkIO $ forever $ do
     threadDelay 200000
-    sync $ sendTick ()
+    active <- sync $ sample activeB
+    when active $ sync $ sendTick ()
 
   -- _ <- on doc keyUp $ do
   --   key <- keyCodeLookup . fromIntegral <$> uiKeyCode

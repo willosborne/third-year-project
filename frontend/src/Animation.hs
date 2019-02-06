@@ -4,38 +4,38 @@ module Animation where
 import Content
 
 import GHCJS.DOM.Types hiding (Text, Event, Animation)
-import GHCJS.DOM.Document()
-import GHCJS.DOM.EventM
+import GHCJS.DOM.Document(IsDocument)
+import GHCJS.DOM.EventM()
 import GHCJS.DOM.GlobalEventHandlers hiding (error)
-import GHCJS.DOM.CanvasRenderingContext2D
+import GHCJS.DOM.CanvasRenderingContext2D()
 
-import Web.KeyCode (keyCodeLookup, Key(..))
+-- import Web.KeyCode (keyCodeLookup, Key(..))
 
-import Render
-import ImagePreloader
-import GHCJSTime
-import Input
+-- import Render
+-- import ImagePreloader
+-- import GHCJSTime
+-- import Input
 
 import Control.Monad.Reader
-import Control.Concurrent
-import Control.Concurrent.MVar (newMVar, modifyMVar, modifyMVar_)
+-- import Control.Concurrent
+-- import Control.Concurrent.MVar (newMVar, modifyMVar, modifyMVar_)
 import Control.Monad.Writer
-import Control.Monad.Trans
+-- import Control.Monad.Trans
   
-import Data.Foldable (foldrM, find)
-import Data.List (deleteBy)
+import Data.Foldable (find)
+import Data.List (foldl')
 import qualified Data.Map as M
+import Data.Unique
 -- import Data.Maybe (fromMaybe)
 
 -- import Reactive.Types
-import Reactive.FRPSimple
+-- import Reactive.FRPSimple
 -- import Reactive.React
 
 
 import Debug.Trace
-import Data.Typeable
+-- import Data.Typeable
 
-import Data.Unique
 
   
 type AnimControl = Double

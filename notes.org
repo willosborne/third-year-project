@@ -177,3 +177,7 @@ currentSlideIndex depends on nextE and prevE events
 these events are constructed by the ~slide~ function
 this function requires ~Inputs~, except we need to map ~Inputs~ to only fire when ~currentSlideIndex~ is equal
 currentSlideIndex -> nextE -> slide -> modifyInputs -> currentSlideIndex
+
+solved this with RecursiveDo.
+
+
