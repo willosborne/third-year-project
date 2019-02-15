@@ -57,15 +57,15 @@ lerpI v0 v1 t = v0 + (floor (fromIntegral (v1 - v0) * t))
 
 -- instance Interpolate AnyInterpolate where
 --   interpolate (AnyInterpolate a1) (AnyInterpolate a2) t  = interpolate a1 a2 t
-data I = PairI (Double, Double)
-       | DoubleI Double
+data I = PairI (Float, Float)
+       | FloatI Float
        | IntI Int
        | ColorI Color
        | DefaultI
        deriving (Show, Eq)
 
 interpolate :: I -> I -> AnimControl -> I
-interpolate (DoubleI d1) (DoubleI d2) t = DoubleI $ lerp d1 d2 t
+interpolate (FloatI d1) (FloatI d2) t = FloatI $ lerp d1 d2 t
 interpolate (IntI i1) (IntI i2) t = IntI $ floor $ lerp (fromIntegral i1) (fromIntegral i2) t
 interpolate (PairI (x1, y1)) (PairI (x2, y2)) t = PairI $ (lerp x1 x2 t, lerp y1 y2 t)
 interpolate (ColorI (RGB r1 g1 b1)) (ColorI (RGB r2 g2 b2)) t = ColorI $
@@ -92,7 +92,7 @@ interpolate DefaultI DefaultI _ = DefaultI
 interpolate a b _ = error ("Mismatched interps. Interps: " ++ (show a) ++ ", " ++ (show b))
 
 defaultI :: I -> I
-defaultI (DoubleI _) = DoubleI 0
+defaultI (FloatI _) = FloatI 0
 defaultI (IntI _) = IntI 0
 defaultI (PairI _) = PairI (0, 0)
 defaultI (ColorI _) = ColorI black
@@ -286,10 +286,10 @@ extractInterp f t = extract (f t Empty)
   where
     extract (Translate x y _)     = Just $ PairI (x, y)
     extract (Scale     x y _)     = Just $ PairI (x, y)
-    extract (Rotate theta _)      = Just $ DoubleI theta
+    extract (Rotate theta _)      = Just $ FloatI theta
     extract (FillColor   color _) = Just $ ColorI color
     extract (StrokeColor color _) = Just $ ColorI color
-    extract (StrokeWidth width _) = Just $ DoubleI width
+    extract (StrokeWidth width _) = Just $ FloatI width
     extract _                     = Nothing
 
 chainTween :: (I -> I -> AnimControl -> Content -> Content)

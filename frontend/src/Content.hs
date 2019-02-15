@@ -10,24 +10,24 @@ type Font = String -- just represents the javascript name of the font
 -- None of these contain position or rotation, as all of those are handled by translations
 data Content =
   Empty
-  | Rect Double Double -- width, height TODO consider filled shapes
-  | FRect Double Double -- width, height TODO consider filled shapes
-  | Circle Double -- radius
-  | FCircle Double -- radius
-  | Line Double Double Double Double -- begin, end
-  | Path [(Double, Double)] -- list of points to connect with path
-  | Polygon [(Double, Double)] -- list of points to connect; join up at end
-  | FPolygon [(Double, Double)] -- list of points to connect; join up at end
-  | RegularPolygon Int Double -- num. sides, radius
-  | FRegularPolygon Int Double -- num. sides, radius
-  | Translate Double Double Content --  x, y, content to transform
-  | Rotate Double Content -- angle, content 
-  | Scale Double Double Content -- xscale, yscale, content
+  | Rect Float Float -- width, height TODO consider filled shapes
+  | FRect Float Float -- width, height TODO consider filled shapes
+  | Circle Float -- radius
+  | FCircle Float -- radius
+  | Line Float Float Float Float -- begin, end
+  | Path [(Float, Float)] -- list of points to connect with path
+  | Polygon [(Float, Float)] -- list of points to connect; join up at end
+  | FPolygon [(Float, Float)] -- list of points to connect; join up at end
+  | RegularPolygon Int Float -- num. sides, radius
+  | FRegularPolygon Int Float -- num. sides, radius
+  | Translate Float Float Content --  x, y, content to transform
+  | Rotate Float Content -- angle, content 
+  | Scale Float Float Content -- xscale, yscale, content
   | Combine Content Content -- combine two Contents   NOTE: consider renaming
   | Text Font (Maybe Float) String  -- font, max width, text  TODO: wrap text rather than squashing it!
   | FillColor Color Content -- fill color
   | StrokeColor Color Content -- fill color
-  | StrokeWidth Double Content
+  | StrokeWidth Float Content
   | Image String ImageSize
   deriving (Eq, Show)
   -- TODO add splines and arcs
@@ -36,15 +36,6 @@ data Content =
 data TransformType = Translation | Scaling | Rotation | FillColorChange | StrokeColorChange | StrokeWidthChange | None
                    deriving (Eq, Show)
 -- TODO remove None and use a Maybe instead
-
-scaleC :: Double -> Double -> Content -> Content
-scaleC x y c = Scale x y c
-
-translateC :: Double -> Double -> Content -> Content
-translateC x y c = Translate x y c
-
-rotateC :: Double -> Content -> Content
-rotateC angle c = Rotate angle c
 
 instance Monoid Content where
   mappend = Combine

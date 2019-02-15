@@ -84,9 +84,6 @@ drawing = Translate 200 200 $
   (Translate 300 0 $ Image "yoda" Original) 
 
 
-testTranslate :: Double -> Content -> Content
-testTranslate x c = Translate x 0 c
-
 ball :: Content
 ball = (FillColor (RGB 255 0 0) $ StrokeWidth 2 $ FCircle 100)
     <> (Translate 0 100 $ Image "egg" Original)

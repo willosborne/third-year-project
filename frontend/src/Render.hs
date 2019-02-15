@@ -29,20 +29,28 @@ degreesToRadians :: Floating a => a -> a
 degreesToRadians degrees = degrees * (pi / 180)
 
 render :: CanvasRenderingContext2D -> Content -> RenderM ()
-render ctx (Line x1 y1 x2 y2) = do
+render ctx (Line x1' y1' x2' y2') = do
   moveTo ctx x1 y1
   lineTo ctx x2 y2
   stroke ctx
+  where
+    x1 = realToFrac x1'
+    x2 = realToFrac x2'
+    y1 = realToFrac y1'
+    y2 = realToFrac y2'
 
-render ctx (Rect w h) = do
+render ctx (Rect w' h') = do
   beginPath ctx
   rect ctx (-w/2) (-h/2) w h
   stroke ctx
+  where
+    w = realToFrac w'
+    h = realToFrac h'
 
 render ctx (FRect w' h') = do
   beginPath ctx
-  fillRect ctx (-w/2) (-h/2) w h
-  rect ctx (-w'/2) (-h'/2) w' h'
+  fillRect ctx (-w'/2) (-h'/2) w' h'
+  rect ctx (-w/2) (-h/2) w h
   stroke ctx
   where
     w = realToFrac w'
@@ -52,26 +60,25 @@ render ctx (Combine c1 c2) = do
   render ctx c1
   render ctx c2
 
-render ctx (Translate x' y' c) = do
-  let x = realToFrac x'
-  let y = realToFrac y'
+render ctx (Translate x y c) = do
   translate ctx x y
   render ctx c
   translate ctx (-x) (-y)
 
-render ctx (Scale x' y' c) = do
+render ctx (Scale x y c) = do
   save ctx
   scale ctx x y
   render ctx c
   restore ctx
-  where x = realToFrac x'
-        y = realToFrac y'
 
 render ctx (Rotate angle' c) = do
+  save ctx
   rotate ctx angle
   render ctx c
-  rotate ctx (-angle)
-  where angle = realToFrac $ degreesToRadians angle'
+  restore ctx
+  -- rotate ctx (-angle)
+  where
+    angle = degreesToRadians angle'
 
 render ctx (FillColor color c) = do
   let colorStr = toJSString $ show color
@@ -81,7 +88,6 @@ render ctx (FillColor color c) = do
   render ctx c
 
   restore ctx
-  -- setFillStyle ctx $ CanvasStyle $ toJSString "#000000"
 
 render ctx (StrokeColor color c) = do
   let colorStr = toJSString $ show color
@@ -95,7 +101,7 @@ render ctx (StrokeColor color c) = do
 
 render ctx (StrokeWidth w c) = do
   save ctx
-  setLineWidth ctx (realToFrac w)
+  setLineWidth ctx w
   render ctx c
   restore ctx 
   -- setLineWidth ctx 1
@@ -103,32 +109,32 @@ render ctx (StrokeWidth w c) = do
 render _ (Path []) = return ()
 render ctx (Path ((x, y) : points)) = do
   beginPath ctx
-  moveTo ctx x y
+  moveTo ctx (realToFrac x) (realToFrac y)
   renderPath points
   stroke ctx
 
   -- TODO: can almost certainly do this neatly with mapM
   where renderPath [] = return ()
         renderPath ((px, py) : ps) = do
-          lineTo ctx px py
+          lineTo ctx (realToFrac px) (realToFrac py)
           renderPath ps
 
 render _ (Polygon []) = return ()
 render ctx (Polygon ((x, y) : points)) = do
   beginPath ctx
-  moveTo ctx x y
+  moveTo ctx (realToFrac x) (realToFrac y)
   renderPath points
   closePath ctx
   stroke ctx
 
   where renderPath [] = return ()
         renderPath ((px, py) : ps) = do
-          lineTo ctx px py
+          lineTo ctx (realToFrac px) (realToFrac py)
           renderPath ps
 
 render _ (FPolygon []) = return ()
 render ctx (FPolygon ((x, y) : points)) = do
-  moveTo ctx x y
+  moveTo ctx (realToFrac x) (realToFrac y)
   renderPath points
   closePath ctx
   fill ctx $ Just CanvasWindingRuleNonzero
@@ -137,22 +143,22 @@ render ctx (FPolygon ((x, y) : points)) = do
 
   where renderPath [] = return ()
         renderPath ((px, py) : ps) = do
-          lineTo ctx px py
+          lineTo ctx (realToFrac px) (realToFrac py)
           renderPath ps
 
 -- NOTE: do i need to move back after rendering a line
 render ctx (RegularPolygon sides radius) = do
   beginPath ctx
   let step = (pi * 2) / (fromIntegral sides)
-  moveTo ctx radius 0
+  moveTo ctx (realToFrac radius) 0
   poly 0 step
   stroke ctx
 
   where
     poly n step
       | n < (sides) = do
-            let x' = radius * (cos (step * (fromIntegral n)))
-            let y' = radius * (sin (step * (fromIntegral n)))
+            let x' = realToFrac $ radius * (cos (step * (fromIntegral n)))
+            let y' = realToFrac $ radius * (sin (step * (fromIntegral n)))
             lineTo ctx x' y'
             poly (n + 1) step
       | otherwise = closePath ctx
@@ -160,7 +166,7 @@ render ctx (RegularPolygon sides radius) = do
 render ctx (FRegularPolygon sides radius) = do
   beginPath ctx
   let step = (pi * 2) / (fromIntegral sides)
-  moveTo ctx radius 0
+  moveTo ctx (realToFrac radius) 0
   poly 0 step
   fill ctx $ Just CanvasWindingRuleNonzero
   stroke ctx
@@ -168,8 +174,8 @@ render ctx (FRegularPolygon sides radius) = do
   where
     poly n step
       | n < (sides) = do
-            let x' = radius * (cos (step * (fromIntegral n)))
-            let y' = radius * (sin (step * (fromIntegral n)))
+            let x' = realToFrac $ radius * (cos (step * (fromIntegral n)))
+            let y' = realToFrac $ radius * (sin (step * (fromIntegral n)))
             lineTo ctx x' y'
             poly (n + 1) step
       | otherwise = closePath ctx

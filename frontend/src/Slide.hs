@@ -93,17 +93,17 @@ generateTick fps = do
   return tick
 
 -- transformer functions - we need these to convert between Content functions and I values
-pairI :: (Double -> Double -> b -> b) -> (I -> b -> b)
+pairI :: (Float -> Float -> b -> b) -> (I -> b -> b)
 pairI f = \p b -> case p of
   (PairI (x, y)) -> f x y b
   DefaultI -> f 0 0 b
   g -> error $ "Must pass PairI. Got " ++ (show g)
 
-doubleI :: (Double -> b -> b) -> (I -> b -> b)
-doubleI f = \p b -> case p of
-  (DoubleI x) -> f x b
+floatI :: (Float -> b -> b) -> (I -> b -> b)
+floatI f = \p b -> case p of
+  (FloatI x) -> f x b
   DefaultI -> f 0 b
-  g -> error $ "Must pass DoubleI. Got " ++ (show g)
+  g -> error $ "Must pass FloatI. Got " ++ (show g)
 
 intI :: (Int -> b -> b) -> (I -> b -> b)
 intI f = \i b -> case i of
@@ -141,10 +141,10 @@ tweenStrokeColor :: I -> I -> AnimControl -> Content -> Content
 tweenStrokeColor  = tween $ colorI StrokeColor
 
 tweenStrokeWidth :: I -> I -> AnimControl -> Content -> Content
-tweenStrokeWidth  = tween $ doubleI StrokeWidth
+tweenStrokeWidth  = tween $ floatI StrokeWidth
 
 tweenRotate      :: I -> I -> AnimControl -> Content -> Content
-tweenRotate       = tween $ doubleI Rotate
+tweenRotate       = tween $ floatI Rotate
 
 -- |Sample a 'Behaviour Animation' and render it, all in one go.
 renderAnimationB :: CanvasRenderingContext2D -> ImageDB -> Behaviour Animation -> IO ()

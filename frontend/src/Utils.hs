@@ -4,12 +4,17 @@ import Slide
 import Animation
 import Content
 
+import Control.Monad.Writer
+import Control.Monad.Trans
+
+import Data.Unique
+
 makeBullets :: [String]
-            -> (Double, Double)
+            -> (Float, Float)
             -> Float
             -> Maybe Float
             -> WriterT [(Animation, Unique)] IO [(Animation, Unique)]
-makeBullets paras lineGap Nothing = do
+makeBullets paras topLeft lineGap Nothing = do
   return []
   
          
