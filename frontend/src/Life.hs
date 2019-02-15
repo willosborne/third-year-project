@@ -66,10 +66,10 @@ modify :: (Int, Int) -> Grid -> Grid
 modify (x, y) grid = S.adjust (S.adjust not x) y grid
 
 start :: Grid
-start = blank 70 35
+start = blank 35 27
 
 cellSize :: Int
-cellSize = 20
+cellSize = 25
 
 adjust :: (Int, Int) -> (Int, Int)
 adjust (mouseX, mouseY) = (div mouseX cellSize, div mouseY cellSize)
@@ -78,7 +78,7 @@ mapXY :: (Int -> Int -> a -> b) -> S.Seq (S.Seq a) -> S.Seq (S.Seq b)
 mapXY f grid = S.mapWithIndex (\y row -> S.mapWithIndex (\x val -> f x y val) row) grid
 
 renderGrid :: Grid -> Content
-renderGrid grid = Translate 10.5 10.5 $ foldr (<>) Empty $ fmap (foldr (<>) Empty) contentGrid
+renderGrid grid = Translate 12.5 12.5 $ foldr (<>) Empty $ fmap (foldr (<>) Empty) contentGrid
   where
     -- contentGrid = S.mapWithIndex (\y row -> S.mapWithIndex (\x val -> renderCell x y val) row) grid
     contentGrid = mapXY (\x y val -> renderCell x y val) grid

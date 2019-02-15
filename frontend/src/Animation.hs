@@ -9,32 +9,15 @@ import GHCJS.DOM.EventM()
 import GHCJS.DOM.GlobalEventHandlers hiding (error)
 import GHCJS.DOM.CanvasRenderingContext2D()
 
--- import Web.KeyCode (keyCodeLookup, Key(..))
-
--- import Render
--- import ImagePreloader
--- import GHCJSTime
--- import Input
-
 import Control.Monad.Reader
--- import Control.Concurrent
--- import Control.Concurrent.MVar (newMVar, modifyMVar, modifyMVar_)
 import Control.Monad.Writer
--- import Control.Monad.Trans
   
 import Data.Foldable (find)
 import Data.List (foldl')
 import qualified Data.Map as M
 import Data.Unique
--- import Data.Maybe (fromMaybe)
-
--- import Reactive.Types
--- import Reactive.FRPSimple
--- import Reactive.React
-
 
 import Debug.Trace
--- import Data.Typeable
 
 
   
@@ -65,9 +48,9 @@ lerpI v0 v1 t = v0 + (floor (fromIntegral (v1 - v0) * t))
 --   where
 --     v = lerp v0 v1 $ ease t
 
-class Interpolate a where
-  -- |Interpolate between one value and another
-  interpolate :: a -> a -> AnimControl -> a
+-- class Interpolate a where
+--   -- |Interpolate between one value and another
+--   interpolate :: a -> a -> AnimControl -> a
   -- defaultVal :: a
 
 -- data AnyInterpolate = forall a. Interpolate a => AnyInterpolate a
@@ -81,32 +64,32 @@ data I = PairI (Double, Double)
        | DefaultI
        deriving (Show, Eq)
 
-interpolate' :: I -> I -> AnimControl -> I
-interpolate' (DoubleI d1) (DoubleI d2) t = DoubleI $ lerp d1 d2 t
-interpolate' (IntI i1) (IntI i2) t = IntI $ floor $ lerp (fromIntegral i1) (fromIntegral i2) t
-interpolate' (PairI (x1, y1)) (PairI (x2, y2)) t = PairI $ (lerp x1 x2 t, lerp y1 y2 t)
-interpolate' (ColorI (RGB r1 g1 b1)) (ColorI (RGB r2 g2 b2)) t = ColorI $
-                                                                 RGB
-                                                                 (lerpI r1 r2 t)
-                                                                 (lerpI g1 g2 t)
-                                                                 (lerpI b1 b2 t)
-interpolate' (ColorI (RGBA r1 g1 b1 a1)) (ColorI (RGBA r2 g2 b2 a2)) t = ColorI $
-                                                                         RGBA
-                                                                         (lerpI r1 r2 t)
-                                                                         (lerpI g1 g2 t)
-                                                                         (lerpI b1 b2 t)
-                                                                         (lerp a1 a2 t)
+interpolate :: I -> I -> AnimControl -> I
+interpolate (DoubleI d1) (DoubleI d2) t = DoubleI $ lerp d1 d2 t
+interpolate (IntI i1) (IntI i2) t = IntI $ floor $ lerp (fromIntegral i1) (fromIntegral i2) t
+interpolate (PairI (x1, y1)) (PairI (x2, y2)) t = PairI $ (lerp x1 x2 t, lerp y1 y2 t)
+interpolate (ColorI (RGB r1 g1 b1)) (ColorI (RGB r2 g2 b2)) t = ColorI $
+                                                                RGB
+                                                                (lerpI r1 r2 t)
+                                                                (lerpI g1 g2 t)
+                                                                (lerpI b1 b2 t)
+interpolate (ColorI (RGBA r1 g1 b1 a1)) (ColorI (RGBA r2 g2 b2 a2)) t = ColorI $
+                                                                        RGBA
+                                                                        (lerpI r1 r2 t)
+                                                                        (lerpI g1 g2 t)
+                                                                        (lerpI b1 b2 t)
+                                                                        (lerp a1 a2 t)
 
-interpolate' (ColorI (RGBA r1 g1 b1 a1)) (ColorI (RGB r2 g2 b2)) t = interpolate'
-                                                                     (ColorI (RGBA r1 g1 b1 a1))
-                                                                     (ColorI (RGBA r2 g2 b2 1.0))
-                                                                     t
-interpolate' (ColorI (RGB r1 g1 b1)) (ColorI (RGBA r2 g2 b2 a2)) t = interpolate'
-                                                                     (ColorI (RGBA r1 g1 b1 1.0))
-                                                                     (ColorI (RGBA r2 g2 b2 a2))
-                                                                     t
-interpolate' DefaultI DefaultI _ = DefaultI
-interpolate' a b _ = error ("Mismatched interps. Interps: " ++ (show a) ++ ", " ++ (show b))
+interpolate (ColorI (RGBA r1 g1 b1 a1)) (ColorI (RGB r2 g2 b2)) t = interpolate
+                                                                    (ColorI (RGBA r1 g1 b1 a1))
+                                                                    (ColorI (RGBA r2 g2 b2 1.0))
+                                                                    t
+interpolate (ColorI (RGB r1 g1 b1)) (ColorI (RGBA r2 g2 b2 a2)) t = interpolate
+                                                                    (ColorI (RGBA r1 g1 b1 1.0))
+                                                                    (ColorI (RGBA r2 g2 b2 a2))
+                                                                    t
+interpolate DefaultI DefaultI _ = DefaultI
+interpolate a b _ = error ("Mismatched interps. Interps: " ++ (show a) ++ ", " ++ (show b))
 
 defaultI :: I -> I
 defaultI (DoubleI _) = DoubleI 0
@@ -127,38 +110,38 @@ defaultI DefaultI = DefaultI
 -- interpolate' (AnyInterpolate i1) (AnyInterpolate i2) t = case i1 of
 --   DoubleInterpolate {} -> case 
 
-instance Interpolate Double where
-  interpolate = lerp
-  -- defaultVal = 0.0
+-- instance Interpolate Double where
+--   interpolate = lerp
+--   -- defaultVal = 0.0
 
-instance Interpolate Float where
-  interpolate = lerp
-  -- defaultVal = 0.0
+-- instance Interpolate Float where
+--   interpolate = lerp
+--   -- defaultVal = 0.0
 
-instance Interpolate Int where
-  interpolate v0 v1 t = floor $ lerp (fromIntegral v0) (fromIntegral v1) t
-  -- defaultVal = 0
+-- instance Interpolate Int where
+--   interpolate v0 v1 t = floor $ lerp (fromIntegral v0) (fromIntegral v1) t
+--   -- defaultVal = 0
 
--- instance Interpolate (Double -> Content -> Content) where
---   interpolate v0 v1 t f = 
+-- -- instance Interpolate (Double -> Content -> Content) where
+-- --   interpolate v0 v1 t f = 
 
-instance Interpolate (Double, Double) where
-  interpolate (x0, y0) (x1, y1) t = (lerp x0 x1 t, lerp y0 y1 t)
-  -- defaultVal = (0.0, 0.0)
+-- instance Interpolate (Double, Double) where
+--   interpolate (x0, y0) (x1, y1) t = (lerp x0 x1 t, lerp y0 y1 t)
+--   -- defaultVal = (0.0, 0.0)
 
-instance Interpolate Color where
-  interpolate (RGBA r1 g1 b1 a1) (RGBA r2 g2 b2 a2) t = (RGBA
-                                                          (interpolate r1 r2 t)
-                                                          (interpolate g1 g2 t)
-                                                          (interpolate b1 b2 t)
-                                                          (interpolate a1 a2 t))
-  interpolate (RGB r1 g1 b1) (RGB r2 g2 b2) t = (RGB
-                                                  (interpolate r1 r2 t)
-                                                  (interpolate g1 g2 t)
-                                                  (interpolate b1 b2 t))
-  interpolate (RGBA _ _ _ _) (RGB _ _ _) _ = undefined
-  interpolate (RGB _ _ _) (RGBA _ _ _ _) _ = undefined
-  -- defaultVal = (RGB 0 0 0)
+-- instance Interpolate Color where
+--   interpolate (RGBA r1 g1 b1 a1) (RGBA r2 g2 b2 a2) t = (RGBA
+--                                                           (interpolate r1 r2 t)
+--                                                           (interpolate g1 g2 t)
+--                                                           (interpolate b1 b2 t)
+--                                                           (interpolate a1 a2 t))
+--   interpolate (RGB r1 g1 b1) (RGB r2 g2 b2) t = (RGB
+--                                                   (interpolate r1 r2 t)
+--                                                   (interpolate g1 g2 t)
+--                                                   (interpolate b1 b2 t))
+--   interpolate (RGBA _ _ _ _) (RGB _ _ _) _ = undefined
+--   interpolate (RGB _ _ _) (RGBA _ _ _ _) _ = undefined
+--   -- defaultVal = (RGB 0 0 0)
 
 -- parameter, ease, render function, duration
 -- data Anim = Anim AnimControl Ease (AnimControl -> Content) Int
@@ -168,20 +151,34 @@ type ChainTween = ((I -> I -> AnimControl -> Content -> Content), I, Ease, Int)
 -- data Animation = Animation AnimControl Ease [(AnimControl -> Content -> Content)] Content Int
 data Animation = Animation [Tween] Content
 
-makeAnimation :: [Tween] -> Content -> Animation
-makeAnimation = Animation
+
+type AnimWriter = WriterT [(Animation, Unique)] IO (Animation, Unique)
+
+makeAnimationPure :: [Tween] -> Content -> Animation
+makeAnimationPure = Animation
 
 
 makeAnimationTagged :: [Tween] -> Content -> IO (Animation, Unique)
 makeAnimationTagged tweens c = do
   key <- newUnique
-  return ((makeAnimation tweens c), key)
+  return ((makeAnimationPure tweens c), key)
 
-makeAnimationW :: [Tween] -> Content -> WriterT [(Animation, Unique)] IO ((Animation, Unique))
-makeAnimationW tweens c = do
+
+-- NOTE: minor annoyance. Compiler will warn you about discarding a result if you
+-- use this but don't use its result. Only way to fix this is with an
+-- animation' function which returns nothing - but that way writer is forced to use
+-- that as the last element in every anim chain. 
+-- |Take a list of tweens or fix statements, make an animation, and add it to the slide.
+animation :: [Tween] -> Content -> AnimWriter
+animation tweens c = do
   anim <- liftIO $ makeAnimationTagged tweens c
   tell [anim]
   return anim
+
+-- animation' :: [Tween] -> Content -> WriterT [(Animation, Unique)] IO ()
+-- animation' tweens c = do
+--   _ <- animation tweens c
+--   return ()
   
 
 -- take an anim, a delta time, and update the control value
@@ -199,21 +196,12 @@ renderAnimation (Animation as c) = foldr ($) c (map renderA as)
   where
     renderA (Tween t ease f _) = f $ ease t
 
--- need to compare tweens for chaining
 tweenType :: Tween -> TransformType
--- tweenType (Tween _ _ f _) = traceShowId $ tweenFuncType f
 tweenType (Tween _ _ f _) = tweenFuncType f
 
--- NOTE: this is probably where the problem is.
--- it only tweens whatever type i slap in below.
--- f :: I -> I -> AnimControl -> Content -> Content 
 
--- e.g. if I pass in (pairI Translate) and then pass in a None willy-nilly, it won't pattern match in the pairI
--- could just adjust transformer functions to ignore Nones
--- issue is that type system cannot determine which I type it should receive
 chainType :: ChainTween -> TransformType
 chainType (f, _, _, _) = tweenFuncType (f DefaultI DefaultI)
--- chainType (f, _, _, _) = traceShowId $ tweenFuncType (f (PairI (0, 0)) (PairI (0, 0)))
 
 tweenFuncType :: (AnimControl -> Content -> Content) -> TransformType
 tweenFuncType f = case (f 0.0 Empty) of
@@ -254,18 +242,19 @@ deleteFirst f (x:xs) = if f x
 -- just pass on the key we were given
 chainAnimationsTagged :: [ChainTween] -> (Animation, Unique) -> IO (Animation, Unique)
 chainAnimationsTagged chains (anim, key) = do
-  return (chainAnimations chains anim, key)
+  return (chainAnimationPure chains anim, key)
 
-chainAnimationW :: [ChainTween] -> (Animation, Unique) -> WriterT [(Animation, Unique)] IO ((Animation, Unique))
-chainAnimationW chains ak = do
+-- |Take a list of chain statements and an animation, and make a new, chained version. Add it to the slide list.
+chain :: [ChainTween] -> (Animation, Unique) -> AnimWriter
+chain chains ak = do
   chained <- liftIO $ chainAnimationsTagged chains ak
   tell [chained]
   return chained
 
-chainAnimations :: [ChainTween]
+chainAnimationPure :: [ChainTween]
                 -> Animation
                 -> Animation
-chainAnimations chainsIn (Animation tweensIn c) = Animation newTweens c
+chainAnimationPure chainsIn (Animation tweensIn c) = Animation newTweens c
   where
     newTweens = chainLoop tweenPairs chainPairs
 
@@ -333,40 +322,3 @@ fix :: (I -> Content -> Content)
 fix render v = Tween 0.0 id func 1
   where
     func = \t -> render v
--- makeAnimation' :: (Interpolate interpolate)
---                => [(Tween, interpolate)]
---                -> TransformState
---                -> Content
---
--- makeAnimation' :: [(Tween, interpolate)]
---                -> TransformState
---                -> Content
---                -> Animation' interpolate
--- makeAnimation' pairs initialState c = Animation' tweens c initialState endState
---   where
---     tweens = map fst pairs
---     endState = modifyState initialState (map (\(tw, v) -> (tweenType tw, v)) pairs)
-
--- -- take a map of new values for the ones which need changing
--- -- replace old values with new values and keep everything else the same
--- modifyState :: (Interpolate interpolate)
---             => TransformState 
---             -> [(TransformType, interpolate)]
---             -> TransformState
--- modifyState (TransformState innerMap) pairs = finalValMap
---   where
---     stateChanges = M.fromList pairs
---     finalValMap = TransformState $ M.union stateChanges innerMap
-
--- also outputs its final state
--- makeTween' :: (Interpolate interpolate)
---            => (interpolate -> interpolate -> AnimControl -> Content -> Content)
---            -> interpolate
---            -> interpolate
---            -> Ease
---            -> Int
---            -> (Tween, interpolate)
--- makeTween' render v0 v1 ease duration = (Tween 0.0 ease tweenFunc duration, v1)
---   where
---     tweenFunc = makeTweenFunction render v0 v1
-        

@@ -20,10 +20,6 @@ import qualified GHCJS.DOM.TextMetrics as TextMetrics (getWidth)
 -- import           Control.Monad.IO
 import           Control.Monad.Reader
 
-
--- newtype RenderM = RenderM { unRenderM :: ReaderT ImageDB IO () }
---   deriving (Monad, Functor, Applicative, MonadReader ImageDB, MonadIO)
-
 type RenderM a = ReaderT ImageDB IO a
 
 renderContent :: CanvasRenderingContext2D -> Content -> ImageDB -> IO ()
@@ -32,8 +28,7 @@ renderContent ctx content db = runReaderT (render ctx content) db
 degreesToRadians :: Floating a => a -> a
 degreesToRadians degrees = degrees * (pi / 180)
 
--- render :: (MonadReader ImageDB m, MonadIO m) => CanvasRenderingContext2D -> Content -> m () -- can I use this to eliminate the liftIOs?
-render :: CanvasRenderingContext2D -> Content -> RenderM () -- this requires vast numbers of liftIO
+render :: CanvasRenderingContext2D -> Content -> RenderM ()
 render ctx (Line x1 y1 x2 y2) = do
   moveTo ctx x1 y1
   lineTo ctx x2 y2
@@ -196,7 +191,6 @@ render ctx (Text font width' text) = do
 render ctx (Image imageName size) = do
   imageDB <- ask
   (ImageData img) <- liftIO $ getImage imageDB imageName
-  -- putStrLn "Render " ++ imageName ++ ": " ++ show img
   case size of
     Original -> do
       x <- ((/(-2)) . realToFrac) <$> getWidth img
@@ -207,13 +201,11 @@ render _ Empty = return ()
 
 
 renderTextWrapped :: CanvasRenderingContext2D -> String -> Float -> Float -> RenderM ()
--- renderTextWrapped :: (MonadReader ImageDB m, MonadIO m) => CanvasRenderingContext2D -> String -> Float -> Float -> m ()
 renderTextWrapped ctx text maxWidth lineHeight = do
   lines' <- ((wordsToLines ctx maxWidth) . words) text
   renderLines 0 lines'
   where
     renderLines :: Float -> [String] -> RenderM ()
-    -- renderLines :: (MonadReader ImageDB m, MonadIO m) => Float -> [String] -> m ()
     renderLines _ []           = return ()
     renderLines y (line:lines) = do
       fillText ctx line 0 y Nothing 
@@ -221,12 +213,10 @@ renderTextWrapped ctx text maxWidth lineHeight = do
 
               
 wordsToLines :: CanvasRenderingContext2D -> Float -> [String] -> RenderM [String]
--- wordsToLines :: (MonadReader ImageDB m, MonadIO m) => CanvasRenderingContext2D -> Float -> [String] -> m [String]
 wordsToLines _ _ [] = return []
 wordsToLines ctx maxWidth wordList = wordsToLinesInternal wordList ""
   where
     wordsToLinesInternal :: [String] -> String -> RenderM [String]
-    -- wordsToLinesInternal :: (MonadReader ImageDB m, MonadIO m) => [String] -> String -> m [String]
     wordsToLinesInternal [] line           = return [line]
     wordsToLinesInternal (word:words) line = do
       let lineWord = line ++ " " ++ word

@@ -22,17 +22,13 @@ import GHCJS.DOM.CanvasRenderingContext2D
 import Data.Monoid ((<>))
 import Data.Unique
 import Data.List (foldl')
-import Data.List.Index (imap, imapM)
+-- import Data.List.Index (imap, imapM)
 import Control.Monad
 import Control.Monad.Trans
 import Control.Monad.Writer hiding (listen)
 -- import Control.Monad.IO.Class
 import Control.Concurrent
 import Control.Applicative
-
-import Data.Typeable
-
--- NOTE: consider adding keyPressed event
 
 data Inputs = Inputs {
   clicks :: Event (Int, Int),
@@ -96,23 +92,24 @@ generateTick fps = do
 
   return tick
 
+-- transformer functions - we need these to convert between Content functions and I values
 pairI :: (Double -> Double -> b -> b) -> (I -> b -> b)
 pairI f = \p b -> case p of
   (PairI (x, y)) -> f x y b
   DefaultI -> f 0 0 b
-  g -> error $ "Must pass PairI. Got " ++ (show (typeOf g))
+  g -> error $ "Must pass PairI. Got " ++ (show g)
 
 doubleI :: (Double -> b -> b) -> (I -> b -> b)
 doubleI f = \p b -> case p of
   (DoubleI x) -> f x b
   DefaultI -> f 0 b
-  _ -> error "Must pass DoubleI."
+  g -> error $ "Must pass DoubleI. Got " ++ (show g)
 
 intI :: (Int -> b -> b) -> (I -> b -> b)
 intI f = \i b -> case i of
   (IntI x) -> f x b
   DefaultI -> f 0 b
-  _ -> error "Must pass IntI."
+  g -> error $ "Must pass IntI. Got " ++ (show g)
 
 colorI :: (Color -> b -> b) -> (I -> b -> b)
 colorI f = \c b -> case c of
@@ -120,6 +117,7 @@ colorI f = \c b -> case c of
   DefaultI -> f black b
   g -> error $ "Must pass ColorI. Got " ++ (show g)
 
+-- |Perform necessary interpolations on the tween and call the render function.
 tween :: (I -> Content -> Content)
       -> I -> I
       -> AnimControl
@@ -127,7 +125,26 @@ tween :: (I -> Content -> Content)
       -> Content
 tween property v0 v1 t c = property v c
   where
-    v = interpolate' v0 v1 t
+    v = interpolate v0 v1 t
+
+-- helper functions for common tween operations
+tweenTranslate   :: I -> I -> AnimControl -> Content -> Content
+tweenTranslate    = tween $ pairI Translate
+
+tweenScale       :: I -> I -> AnimControl -> Content -> Content
+tweenScale        = tween $ pairI Scale
+
+tweenFillColor   :: I -> I -> AnimControl -> Content -> Content
+tweenFillColor    = tween $ colorI FillColor
+
+tweenStrokeColor :: I -> I -> AnimControl -> Content -> Content
+tweenStrokeColor  = tween $ colorI StrokeColor
+
+tweenStrokeWidth :: I -> I -> AnimControl -> Content -> Content
+tweenStrokeWidth  = tween $ doubleI StrokeWidth
+
+tweenRotate      :: I -> I -> AnimControl -> Content -> Content
+tweenRotate       = tween $ doubleI Rotate
 
 -- |Sample a 'Behaviour Animation' and render it, all in one go.
 renderAnimationB :: CanvasRenderingContext2D -> ImageDB -> Behaviour Animation -> IO ()
@@ -165,21 +182,19 @@ indexOrLast list i
   | i >= 0 && i < length list = list !! i
   | otherwise                 = last list
 
-slide :: [(Animation, Unique)]
-      -> CanvasRenderingContext2D
-      -> document
-      -> ImageDB
-      -> Inputs
-      -> Behaviour Bool
-      -> Int
-      -> IO ((IO (), Event (), Event ())) -- render, previous slide, next slide
-slide anims ctx _ imageDB inputs _ fps = do
+makeSlide :: [(Animation, Unique)]
+          -> CanvasRenderingContext2D
+          -> document
+          -> ImageDB
+          -> Inputs
+          -> Behaviour Bool
+          -> Int
+          -> IO ((IO (), Event (), Event ())) -- render, previous slide, next slide
+makeSlide anims ctx _ imageDB inputs _ fps = do
   let Inputs { next, previous, tick } = inputs
   
   timeRef <- initTime
 
-  -- TODO could do this with zip and [0..]
-  -- let animsIndexed = imap (\i pair -> (i, pair)) anims
   let animsIndexed = zip [0..] anims
   -- putStrLn $ show $ map fst animsIndexed
 
@@ -248,22 +263,25 @@ type SlideFunc document = CanvasRenderingContext2D -> document -> ImageDB -> Inp
 type SlideWriter document = WriterT [SlideFunc document]
                             IO ()
 
-type AnimWriter = WriterT [(Animation, Unique)] IO ((Animation, Unique))
-
-slideWW :: (IsEventTarget document, IsDocument document)
-        => AnimWriter
-        -> SlideWriter document
-slideWW animWriter = do
+slide :: (IsEventTarget document, IsDocument document)
+      => AnimWriter
+      -> SlideWriter document
+slide animWriter = do
   anims <- liftIO $ execWriterT animWriter
-  let out = slide anims
+  let out = makeSlide anims
   tell [out]
   
-slideW :: (IsEventTarget document, IsDocument document)
-       => [(Animation, Unique)]
-       -> SlideWriter document
-slideW anims = do
-  let out = slide anims
+slideList :: (IsEventTarget document, IsDocument document)
+          => [(Animation, Unique)]
+          -> SlideWriter document
+slideList anims = do
+  let out = makeSlide anims
   tell [out]
+
+slideGeneric :: (IsEventTarget document, IsDocument document)
+             => SlideFunc document
+             -> SlideWriter document
+slideGeneric func = tell [func]
 
 -- generate a new Inputs with events that only fire when index is right
 modifyInputs :: Inputs -> Behaviour Int -> Int -> Inputs
@@ -285,6 +303,7 @@ modifyInputs (Inputs {clicks,
     tick' = whenE shouldTickB tick
     shouldTickB = (i ==) <$> currentIndexB
 
+-- |Take a SlideWriter do block and necessary control vars and run a slideshow.
 slideshow :: (IsEventTarget document, IsDocument document)
           => CanvasRenderingContext2D
           -> document
@@ -293,15 +312,15 @@ slideshow :: (IsEventTarget document, IsDocument document)
           -> SlideWriter document
           -> IO ()
 slideshow ctx doc imageDB fps slideWriter = mdo
-  -- NB use of recursive do to avoid circular definition
+  -- NOTE: use of recursive do to avoid circular definition
   slideFuncs <- execWriterT slideWriter
   -- slideFuncs :: [SlideFunc document]
   baseInputs <- generateInputs doc fps
 
-  slides <- imapM (\i f -> f ctx doc imageDB
+  slides <- mapM (\(f, i) -> f ctx doc imageDB
                            (modifyInputs baseInputs currentIndexB i)
                            ((i ==) <$> currentIndexB)
-                           fps) slideFuncs
+                           fps) (zip slideFuncs [0..])
   let action (a, _, _) = a
       prev   (_, p, _) = p
       next   (_, _, n) = n

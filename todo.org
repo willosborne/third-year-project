@@ -89,3 +89,4 @@ Need a way of specifying tweens easily
 ** TODO move render functionality to typeclass to allow for extensibility
 ** TODO Local image store
 Ensure images and other resources are bundled alongside the webpage and js code.
+** TODO Fixed animation helper
