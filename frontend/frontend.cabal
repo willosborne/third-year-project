@@ -31,7 +31,6 @@ library
                      , Reactive.Types
                      , Reactive.FRPSimple
                      , Utils
-                     , Life
                      , Eases
   js-sources:          src/utils.js
   -- other-extensions:    
@@ -55,6 +54,7 @@ executable frontend
   main-is:             Main.hs
   ghc-options:         -Wall -O2 -threaded -rtsopts -with-rtsopts=-N
   -- other-extensions:    
+  other-modules:       Life
   build-depends:       base >=4.9 && <4.12
                      , common
                      , reflex-dom

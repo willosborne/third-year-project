@@ -340,4 +340,3 @@ slideshow ctx doc imageDB fps slideWriter = mdo
         action currentSlide
         loop
   loop
-  
