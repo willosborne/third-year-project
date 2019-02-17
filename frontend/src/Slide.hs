@@ -256,7 +256,9 @@ makeSlide anims ctx _ imageDB inputs _ fps = do
           threadDelay $ diff * 1000 -- convert to microsecs and delay by that amount
   return (loop, prevSlideE, nextSlideE)
 
-
+-- |A function that can be run as part of a 'slideshow' call.
+-- Takes a canvas context, a document, an 'ImageDB', an 'Inputs' object, a 'paused' behaviour, and an FPS.
+-- Must return an IO action to be called when it's rendered, and two 'Event's - 'nextSlide' and 'previousSlide'.
 type SlideFunc document = CanvasRenderingContext2D -> document -> ImageDB -> Inputs -> Behaviour Bool -> Int -> IO (IO (), Event (), Event ())
 
 -- we collect a list of rendering functions - animations etc are already passed in

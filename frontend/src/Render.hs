@@ -10,14 +10,12 @@ import           GHCJS.DOM.CanvasRenderingContext2D
 import           GHCJS.DOM.CanvasPath
 import           GHCJS.DOM.Enums (CanvasWindingRule (CanvasWindingRuleNonzero))
 import           GHCJS.DOM.Types (CanvasStyle (..))
-import GHCJS.DOM.HTMLImageElement (getWidth, getHeight)
+import           GHCJS.DOM.HTMLImageElement (getWidth, getHeight)
 
-import           Data.List (intercalate)
 import           GHCJS.Prim (toJSString)
 
 import qualified GHCJS.DOM.TextMetrics as TextMetrics (getWidth)
 
--- import           Control.Monad.IO
 import           Control.Monad.Reader
 
 type RenderM a = ReaderT ImageDB IO a
@@ -202,6 +200,7 @@ render ctx (Image imageName size) = do
       x <- ((/(-2)) . realToFrac) <$> getWidth img
       y <- ((/(-2)) . realToFrac) <$> getHeight img
       drawImage ctx img x y
+    -- TODO add scaling of images
   
 render _ Empty = return ()
 
@@ -213,9 +212,9 @@ renderTextWrapped ctx text maxWidth lineHeight = do
   where
     renderLines :: Float -> [String] -> RenderM ()
     renderLines _ []           = return ()
-    renderLines y (line:lines) = do
+    renderLines y (line:ls) = do
       fillText ctx line 0 y Nothing 
-      renderLines (y + lineHeight) lines
+      renderLines (y + lineHeight) ls
 
               
 wordsToLines :: CanvasRenderingContext2D -> Float -> [String] -> RenderM [String]
@@ -224,13 +223,29 @@ wordsToLines ctx maxWidth wordList = wordsToLinesInternal wordList ""
   where
     wordsToLinesInternal :: [String] -> String -> RenderM [String]
     wordsToLinesInternal [] line           = return [line]
-    wordsToLinesInternal (word:words) line = do
+    wordsToLinesInternal (word:ws) line = do
       let lineWord = line ++ " " ++ word
       textMet <- measureText ctx lineWord
       lineWordLength <- TextMetrics.getWidth textMet
       case lineWordLength <= maxWidth of
-        True        -> wordsToLinesInternal words lineWord
-        _           -> (line :) <$> wordsToLinesInternal words word
+        True        -> wordsToLinesInternal ws lineWord
+        _           -> (line :) <$> wordsToLinesInternal ws word
+
+wordsToLineCount :: CanvasRenderingContext2D -> Float -> [String] -> IO Int
+wordsToLineCount _ _ [] = return 1
+wordsToLineCount ctx maxWidth wordList = wordsToLinesInternal wordList "" 1
+  where
+    wordsToLinesInternal :: [String] -> String -> Int -> IO Int
+    wordsToLinesInternal [] _ lineCount = return lineCount
+      -- | line == "" = return lineCount
+      -- | otherwise  = return $ lineCount + 1
+    wordsToLinesInternal (word:ws) line lineCount = do
+      let lineWord = line ++ " " ++ word
+      textMet <- measureText ctx lineWord
+      lineWordLength <- TextMetrics.getWidth textMet
+      case lineWordLength <= maxWidth of
+        True        -> wordsToLinesInternal ws lineWord lineCount
+        _           -> wordsToLinesInternal ws word (lineCount + 1)
 
 
 clearScreen :: CanvasRenderingContext2D -> IO ()

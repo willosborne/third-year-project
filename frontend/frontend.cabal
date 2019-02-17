@@ -33,6 +33,7 @@ executable frontend
                      , Reactive.FRPSimple
                      , Utils
                      , Life
+                     , Eases
   js-sources:          src/utils.js
   -- other-extensions:    
   build-depends:       base >=4.9 && <4.12

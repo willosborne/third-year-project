@@ -80,7 +80,6 @@ mapXY f grid = S.mapWithIndex (\y row -> S.mapWithIndex (\x val -> f x y val) ro
 renderGrid :: Grid -> Content
 renderGrid grid = Translate 12.5 12.5 $ foldr (<>) Empty $ fmap (foldr (<>) Empty) contentGrid
   where
-    -- contentGrid = S.mapWithIndex (\y row -> S.mapWithIndex (\x val -> renderCell x y val) row) grid
     contentGrid = mapXY (\x y val -> renderCell x y val) grid
     renderCell x y True = Translate (fromIntegral $ x * cellSize) (fromIntegral $ y * cellSize) $ FillColor (RGB 0 0 0) $
       FRect (fromIntegral cellSize) (fromIntegral cellSize)
@@ -88,7 +87,6 @@ renderGrid grid = Translate 12.5 12.5 $ foldr (<>) Empty $ fmap (foldr (<>) Empt
                                      
 lifeSlide :: (IsEventTarget target, IsDocument target) => SlideFunc target
 lifeSlide ctx doc db inputs activeB fps = do
-  -- animStartTime <- getTime
   timeRef <- initTime
 
   let Inputs {clicks, keyPressed, tick} = inputs
@@ -111,10 +109,6 @@ lifeSlide ctx doc db inputs activeB fps = do
     threadDelay 200000
     active <- sync $ sample activeB
     when active $ sync $ sendTick ()
-
-  -- _ <- on doc keyUp $ do
-  --   key <- keyCodeLookup . fromIntegral <$> uiKeyCode
-  --   liftIO $ when (key == Space) $ sync $ sendPause ()
 
   let loop = do
 
