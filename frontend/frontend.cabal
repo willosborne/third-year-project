@@ -16,11 +16,10 @@ cabal-version:       >=1.10
 -- data-files:          ../../static/**/*.jpg
 --                    , ../../static/**/*.png
 --                    , ../../static/**/*.gif
-
-executable frontend
-  main-is:             Main.hs
-  ghc-options:         -Wall -O2 -threaded -rtsopts -with-rtsopts=-N
-  other-modules:       Content
+                      
+library                    
+  ghc-options:         -Wall -O2 
+  exposed-modules:     Content
                      , Render
                      , Image
                      , ImagePreloader
@@ -49,6 +48,26 @@ executable frontend
                      , containers
                      , time
                      , keycode
-                     -- , ilist
   hs-source-dirs:      src
+  default-language:    Haskell2010
+
+executable frontend
+  main-is:             Main.hs
+  ghc-options:         -Wall -O2 -threaded -rtsopts -with-rtsopts=-N
+  -- other-extensions:    
+  build-depends:       base >=4.9 && <4.12
+                     , common
+                     , reflex-dom
+                     , ghcjs-dom >= 0.9 && <0.10
+                     , ghcjs-dom-jsffi 
+                     , mtl
+                     , jsaddle
+                     , ghcjs-base
+                     , ghcjs-prim
+                     , ghcjs-ffiqq
+                     , containers
+                     , time
+                     , keycode
+                     , frontend
+  hs-source-dirs:      exe
   default-language:    Haskell2010
