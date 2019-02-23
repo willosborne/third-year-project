@@ -68,6 +68,12 @@ modify (x, y) grid = S.adjust (S.adjust not x) y grid
 start :: Grid
 start = blank 35 27
 
+glider :: Grid
+glider = ((modify (10, 10)) . (modify (11, 10)) . (modify (12, 10)) . (modify (12, 9)) . (modify (11, 8))) start
+
+rPentomino :: Grid
+rPentomino = ((modify (15, 15)) . (modify (16, 15)) . (modify (15, 16)) . (modify (14, 16)) . (modify (15, 17))) start
+
 cellSize :: Int
 cellSize = 25
 
@@ -96,14 +102,14 @@ lifeSlide ctx doc db inputs activeB fps = do
 
   (tick, sendTick) <- newEvent
 
-  active <- accumB False (not <$ pause)
+  active <- accumB True (not <$ pause)
 
   let steps = whenE active (step <$ tick)
       modifies = modify . adjust <$> clicks
       changes = steps <> modifies
-  life <- accumE start changes
 
-  bLife <- hold start life
+  -- bLife <- accumB start changes
+  bLife <- accumB rPentomino changes
 
   _ <- forkIO $ forever $ do
     threadDelay 200000
@@ -111,14 +117,12 @@ lifeSlide ctx doc db inputs activeB fps = do
     when active $ sync $ sendTick ()
 
   let loop = do
-
         clearRect ctx 0 0 6000 4000
         setTransform ctx 1 0 0 1 0 0 
 
         g <- sync $ sample bLife
         
         renderContent ctx (renderGrid g) db
-
 
         dtMs <- updateTime timeRef
         let diff = (floor $ (1 / fromIntegral fps) * 1000) - dtMs
@@ -180,7 +184,6 @@ runLife ctx doc = do
         g <- sync $ sample bLife
         
         renderContent ctx (renderGrid g) em
-
 
         endTime <- getTime
 

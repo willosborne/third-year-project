@@ -19,7 +19,6 @@ import Data.Unique
 
 import Debug.Trace
 
-
   
 type AnimControl = Double
 
@@ -152,13 +151,16 @@ type ChainTween = ((I -> I -> AnimControl -> Content -> Content), I, Ease, Int)
 data Animation = Animation [Tween] Content
 
 
-type AnimWriter = WriterT [(Animation, Unique)] IO (Animation, Unique)
+type TaggedAnimation = (Animation, Unique)
+
+
+type AnimWriter = WriterT [TaggedAnimation] IO TaggedAnimation
 
 makeAnimationPure :: [Tween] -> Content -> Animation
 makeAnimationPure = Animation
 
 
-makeAnimationTagged :: [Tween] -> Content -> IO (Animation, Unique)
+makeAnimationTagged :: [Tween] -> Content -> IO TaggedAnimation
 makeAnimationTagged tweens c = do
   key <- newUnique
   return ((makeAnimationPure tweens c), key)
@@ -240,12 +242,12 @@ deleteFirst f (x:xs) = if f x
                        else x : deleteFirst f xs
 
 -- just pass on the key we were given
-chainAnimationsTagged :: [ChainTween] -> (Animation, Unique) -> IO (Animation, Unique)
+chainAnimationsTagged :: [ChainTween] -> TaggedAnimation -> IO TaggedAnimation
 chainAnimationsTagged chains (anim, key) = do
   return (chainAnimationPure chains anim, key)
 
 -- |Take a list of chain statements and an animation, and make a new, chained version. Add it to the slide list.
-chain :: [ChainTween] -> (Animation, Unique) -> AnimWriter
+chain :: [ChainTween] -> TaggedAnimation -> AnimWriter
 chain chains ak = do
   chained <- liftIO $ chainAnimationsTagged chains ak
   tell [chained]

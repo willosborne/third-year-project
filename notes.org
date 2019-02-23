@@ -179,5 +179,15 @@ this function requires ~Inputs~, except we need to map ~Inputs~ to only fire whe
 currentSlideIndex -> nextE -> slide -> modifyInputs -> currentSlideIndex
 
 solved this with RecursiveDo.
+** Rendering things that don't require a click
+*** Background images 
+*** Animations that update and render together (maybe groups???)
+Could have a group constructor that takes several ~Animation~ 
+Group then renders and updates all animations at once
+This complicates things a lot
+
+Or a ~skip~ property on Animation which is not set by default and can be turned on?
+Then skip it on rendering
 
 
+Key difference: want animations that happen in sets or rather to simulate a skip

@@ -13,9 +13,10 @@ maintainer:          willfosborne@gmail.com
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
--- data-files:          ../../static/**/*.jpg
---                    , ../../static/**/*.png
---                    , ../../static/**/*.gif
+data-files:          exe/images/*.jpg
+                   , exe/images/*.png
+                   , exe/images/*.gif
+
                       
 library                    
   ghc-options:         -Wall -O2 

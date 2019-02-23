@@ -19,14 +19,13 @@ import GHCJS.DOM.Types hiding (Text, Event, Animation)
 import GHCJS.DOM.GlobalEventHandlers hiding (error)
 import GHCJS.DOM.CanvasRenderingContext2D
 
+import Data.List (foldl')
 import Data.Monoid ((<>))
 import Data.Unique
-import Data.List (foldl')
--- import Data.List.Index (imap, imapM)
+  
 import Control.Monad
 import Control.Monad.Trans
 import Control.Monad.Writer hiding (listen)
--- import Control.Monad.IO.Class
 import Control.Concurrent
 import Control.Applicative
 
@@ -155,7 +154,7 @@ renderAnimationB ctx imageDB animB = do
 -- |Sample a 'Behaviour' containing a tagged and indexed 'Animation' and render it.
 renderTaggedIndexedAnimationB :: CanvasRenderingContext2D
                               -> ImageDB
-                              -> Behaviour (Int, (Animation, Unique))
+                              -> Behaviour (Int, TaggedAnimation)
                               -> IO ()
 renderTaggedIndexedAnimationB ctx imageDB animB = do
   (_, (anim, _)) <- sync $ sample animB
@@ -164,18 +163,18 @@ renderTaggedIndexedAnimationB ctx imageDB animB = do
 -- |Sample and render a list of tagged, indexed animation 'Behaviour's.
 renderAnimationBListB :: CanvasRenderingContext2D
                      -> ImageDB
-                     -> Behaviour [Behaviour (Int, (Animation, Unique))]
+                     -> Behaviour [Behaviour (Int, TaggedAnimation)]
                      -> IO ()
 renderAnimationBListB ctx imageDB animsBListB = do
   animsBList <- sync $ sample animsBListB
   mapM_ (renderTaggedIndexedAnimationB ctx imageDB) animsBList
 
 -- |Like 'updateAnimation', but for tagged, indexed versions.
-updateTaggedIndexedAnimation :: Int -> (Int, (Animation, Unique)) -> (Int, (Animation, Unique))
+updateTaggedIndexedAnimation :: Int -> (Int, TaggedAnimation) -> (Int, TaggedAnimation)
 updateTaggedIndexedAnimation dt (i, (anim, key)) = (i, (updateAnimation dt anim, key))
 
-updateTaggedIndexedAnimation' :: Int -> (Int, (Animation, Unique)) -> (Int, (Animation, Unique))
-updateTaggedIndexedAnimation' dt (i, (anim, key)) = (i, (updateAnimation dt anim, key))
+-- updateTaggedIndexedAnimation' :: Int -> (Int, TaggedAnimation) -> (Int, TaggedAnimation)
+-- updateTaggedIndexedAnimation' dt (i, (anim, key)) = (i, (updateAnimation dt anim, key))
 
 indexOrLast :: [a] -> Int -> a
 indexOrLast list i
@@ -196,19 +195,18 @@ makeSlide anims ctx _ imageDB inputs _ fps = do
   timeRef <- initTime
 
   let animsIndexed = zip [0..] anims
-  -- putStrLn $ show $ map fst animsIndexed
 
   -- conditions for tick and render:
   -- index < currentIndex
   -- there is no other anim2 with the same class where index(anim2) > index
 
   -- all animations with the same key as the given anim and an index <= current index OTHER than the one we search for 
-  let filteredAnims :: (Int, (Animation, Unique)) -> Int -> [(Int, (Animation, Unique))]
+  let filteredAnims :: (Int, TaggedAnimation) -> Int -> [(Int, TaggedAnimation)]
       filteredAnims (index, (_, key)) currentI = filter (\(i, (_, k)) -> (k == key) &&
                                                                             (i <= currentI) &&
                                                                             (i /= index)) animsIndexed
       
-      animActive :: (Int, (Animation, Unique)) -> Int -> Bool                                                    
+      animActive :: (Int, TaggedAnimation) -> Int -> Bool                                                    
       animActive whole@(i, _) currentI = (i <= currentI) && largestVal filtered
         where
           largestVal [] = True
@@ -274,7 +272,7 @@ slide animWriter = do
   tell [out]
   
 slideList :: (IsEventTarget document, IsDocument document)
-          => [(Animation, Unique)]
+          => [TaggedAnimation]
           -> SlideWriter document
 slideList anims = do
   let out = makeSlide anims

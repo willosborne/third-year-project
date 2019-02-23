@@ -24,11 +24,9 @@ import Eases
 import Life
 import Presentation
 
-run :: a -> a
-run = id
 
 main :: IO ()
-main = run helloMain
+main = runPresentation
 
 
 cross :: Content
