@@ -12,7 +12,8 @@ import           Data.Unique
 import           Unsafe.Coerce (unsafeCoerce)
 
 import           GHCJS.DOM
-import           GHCJS.DOM.Document
+import           GHCJS.DOM.Document (Document, getBody)
+import qualified GHCJS.DOM.Document as Doc (setTitle)
 import           GHCJS.DOM.Types hiding (Animation, Text)
 import           GHCJS.DOM.Element
 import           GHCJS.DOM.CanvasRenderingContext2D
@@ -53,21 +54,20 @@ makeBullets font (x0, y0) lineGap (Just maxWidth) ctx paragraphs  = do
 -- makeText :: Font -> (Float, Float)
 
   
-empty :: AnimWriter
-empty = do
+delayAnim :: AnimWriter
+delayAnim = do
   animation [] Empty
 
+empty :: AnimWriter
+empty = do
+  return undefined 
+  -- return (Animation [] Empty, newUnique)
 
 -- from shine
 toContext :: Element -> IO CanvasRenderingContext2D
 toContext c = do 
   Just ctx <- H.getContext (unsafeCoerce c) "2d" ["2d"] -- NOTE: extremely hacky way of passing in Element as a JSVal
   return $ unsafeCoerce ctx 
-
--- canvasStyle :: String
--- canvasStyle = "\"border:1px \
---               \solid #00000; \
---               \top:0px;bottom:0px;left:0px;right:0px;\""
 
 canvasContext :: Document -> String -> IO CanvasRenderingContext2D
 canvasContext doc attributes = do
@@ -98,6 +98,11 @@ getContext = do
   w <- getInnerWidth win
   h <- getInnerHeight win
   fixedSizeCanvas doc w h
+
+setTitle :: String -> IO ()
+setTitle title = do
+  doc <- currentDocumentUnchecked
+  Doc.setTitle doc title
 
 -- foreign import javascript unsafe "$r = document.getElementById('canvas').getContext('2d');"
 --   getCtx :: IO JavaScript.Web.Canvas.Context
