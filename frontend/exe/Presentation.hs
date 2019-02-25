@@ -28,7 +28,9 @@ runPresentation = do
   _ <- updateTime timeRef
   imageDB <- loadImages em [("behaviour", "images/frp-behavior.png"),
                             ("event", "images/frp-event.png"),
-                            ("frp-full", "images/frp-example-full.png")
+                            ("frp-full", "images/frp-example-full.png"),
+                            ("haskell", "images/haskell.png"),
+                            ("graphics-examples-code", "images/graphics-examples-code.png")
                            ]
   updateTime timeRef >>= (\t -> putStrLn ("Images loaded. Time: " ++ (show t) ++ "ms."))
   
@@ -112,28 +114,36 @@ runPresentation = do
         "• Purely functional interface guarantees consistent rendering",
         " ",
         "• OpenGL-style transformation matrix functions",
-        "• Inspiration from existing declarative graphics frameworks",
         "• Image pre-loader - ensure all images have loaded before rendering them"
         ]
       empty
     slide $ do
-      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Graphics"
-      makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
-        "• ",
-        "• ",
-        "• ",
-        "• "
-        ]
-      empty
+      let examplePair = Translate (-(w %% 15)) 0 $ Image "graphics-examples-code" Original <!>
+                        Translate (w %% 30) (-(w %% 10)) $ examples
+          examples = (Translate 50 120 $ (Image "haskell" Original <>
+                                          (Translate 50 0 $ StrokeWidth 4 $ Circle 100) <>
+                                          (Rotate 45 $ StrokeWidth 4 $ Rect 150 100))) <>
+                     (Circle 100) <>
+                     (Translate 200 250 $ (FillColor (RGB 255 0 0) $ 
+                                             StrokeColor (RGB 0 255 0) $
+                                             StrokeWidth 4 $ FCircle 100))
+      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Graphics Example"
+      animation [] $ Translate (w %% 50) (w %% 25) $ examplePair
     slide $ do
-      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Graphics"
+      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Animation system"
       makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
-        "• ",
-        "• ",
-        "• ",
-        "• "
+        "• Works by animating a Tween on a graphics object",
+        "• Any property can be tweened - position, rotation, colour, etc.",
+        "• Achieve different animation styles using 'Easing functions'"
         ]
-      empty
+      let circle = FCircle 35
+      
+      animation [] $ Translate (w %% 22) 350 $ Text fontH2 Nothing "Linear"
+      animation [ makeTween tweenTranslate (PairI (w %% 50, 350)) (PairI (w %% 80, 350)) easeLinear 2000000 ] $ FillColor red $ circle
+      animation [] $ Translate (w %% 22) 430 $ Text fontH2 Nothing "Elastic"
+      animation [ makeTween tweenTranslate (PairI (w %% 50, 430)) (PairI (w %% 80, 430)) easeOutElastic 2000000 ] $ FillColor green $ circle
+      animation [] $ Translate (w %% 22) 510 $ Text fontH2 Nothing "Bounce"
+      animation [ makeTween tweenTranslate (PairI (w %% 50, 510)) (PairI (w %% 80, 510)) easeOutBounce 2000000 ] $ FillColor blue $ circle
     slideGeneric lifeSlide
 
   

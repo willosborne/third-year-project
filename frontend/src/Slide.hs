@@ -312,6 +312,7 @@ slideshow ctx doc imageDB fps slideWriter = mdo
   -- NOTE: use of recursive do to avoid circular definition
   slideFuncs <- execWriterT slideWriter
   baseInputs <- generateInputs doc fps
+  let Inputs { keyPressed } = baseInputs
 
   slides <- mapM (\(f, i) -> f ctx doc imageDB
                            (modifyInputs baseInputs currentIndexB i)
@@ -325,8 +326,9 @@ slideshow ctx doc imageDB fps slideWriter = mdo
       prevE = foldl' (<>) never (map prev slides)
       step = (clampSlide . (+1) <$ nextE) <> (clampSlide . (subtract 1) <$ prevE)
       clampSlide i = min ((length slides) - 1) $ max 0 i
+      skip = (\_ -> ((length slides) - 1)) <$ filterE (== Digit0) keyPressed
 
-  currentIndexB <- accumB 0 step
+  currentIndexB <- accumB 0 (step <> skip)
   let currentSlideB = (slides !!) <$> currentIndexB
 
   let loop = do

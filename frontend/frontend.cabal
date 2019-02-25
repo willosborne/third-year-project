@@ -49,7 +49,7 @@ library
 
 executable frontend
   main-is:             Main.hs
-  ghc-options:         -Wall -O2 -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -O2 -threaded -rtsopts -with-rtsopts=-N
   -- other-extensions:    
   other-modules:       Life
                      , Presentation

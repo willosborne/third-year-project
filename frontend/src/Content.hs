@@ -33,6 +33,11 @@ data Content =
   deriving (Eq, Show)
   -- TODO add splines and arcs
 
+(<!>) :: Content -> Content -> Content
+(<!>) = Combine
+
+infixr 0 <!>
+
 data TextAlign = AlignLeft | AlignCenter | AlignRight deriving (Eq)
 instance Show TextAlign where
   show AlignLeft = "left"
