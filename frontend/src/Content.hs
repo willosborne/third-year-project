@@ -25,12 +25,19 @@ data Content =
   | Scale Float Float Content -- xscale, yscale, content
   | Combine Content Content -- combine two Contents   NOTE: consider renaming
   | Text Font (Maybe Float) String  -- font, max width, text  TODO: wrap text rather than squashing it!
+  | AlignText TextAlign Content -- TODO: replace this with more general text align
   | FillColor Color Content -- fill color
   | StrokeColor Color Content -- fill color
   | StrokeWidth Float Content
   | Image String ImageSize
   deriving (Eq, Show)
   -- TODO add splines and arcs
+
+data TextAlign = AlignLeft | AlignCenter | AlignRight deriving (Eq)
+instance Show TextAlign where
+  show AlignLeft = "left"
+  show AlignCenter = "center"
+  show AlignRight = "right"
 
 -- used in tweens
 data TransformType = Translation | Scaling | Rotation | FillColorChange | StrokeColorChange | StrokeWidthChange | None

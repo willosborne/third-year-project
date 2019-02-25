@@ -13,10 +13,6 @@ maintainer:          willfosborne@gmail.com
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
-data-files:          exe/images/*.jpg
-                   , exe/images/*.png
-                   , exe/images/*.gif
-
                       
 library                    
   ghc-options:         -Wall -O2 
@@ -56,6 +52,7 @@ executable frontend
   ghc-options:         -Wall -O2 -threaded -rtsopts -with-rtsopts=-N
   -- other-extensions:    
   other-modules:       Life
+                     , Presentation
   build-depends:       base >=4.9 && <4.12
                      , common
                      , reflex-dom

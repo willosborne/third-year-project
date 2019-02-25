@@ -173,9 +173,6 @@ renderAnimationBListB ctx imageDB animsBListB = do
 updateTaggedIndexedAnimation :: Int -> (Int, TaggedAnimation) -> (Int, TaggedAnimation)
 updateTaggedIndexedAnimation dt (i, (anim, key)) = (i, (updateAnimation dt anim, key))
 
--- updateTaggedIndexedAnimation' :: Int -> (Int, TaggedAnimation) -> (Int, TaggedAnimation)
--- updateTaggedIndexedAnimation' dt (i, (anim, key)) = (i, (updateAnimation dt anim, key))
-
 indexOrLast :: [a] -> Int -> a
 indexOrLast list i
   | i >= 0 && i < length list = list !! i
@@ -314,7 +311,6 @@ slideshow :: (IsEventTarget document, IsDocument document)
 slideshow ctx doc imageDB fps slideWriter = mdo
   -- NOTE: use of recursive do to avoid circular definition
   slideFuncs <- execWriterT slideWriter
-  -- slideFuncs :: [SlideFunc document]
   baseInputs <- generateInputs doc fps
 
   slides <- mapM (\(f, i) -> f ctx doc imageDB
@@ -328,7 +324,7 @@ slideshow ctx doc imageDB fps slideWriter = mdo
       nextE = foldl' (<>) never (map next slides)
       prevE = foldl' (<>) never (map prev slides)
       step = (clampSlide . (+1) <$ nextE) <> (clampSlide . (subtract 1) <$ prevE)
-      clampSlide i = min (length slides) $ max 0 i
+      clampSlide i = min ((length slides) - 1) $ max 0 i
 
   currentIndexB <- accumB 0 step
   let currentSlideB = (slides !!) <$> currentIndexB

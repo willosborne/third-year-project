@@ -45,10 +45,12 @@ makeBullets font (x0, y0) lineGap (Just maxWidth) ctx paragraphs  = do
         tell [anim]
         noLines <- liftIO $ wordsToLineCount ctx maxWidth (words para)
         anims <- loop (y + (lineGap * (fromIntegral noLines))) paras
-        return $ anims ++ [anim]
+        return $ anim : anims
   setFont ctx font
   list <- loop y0 paragraphs
   return list
+
+-- makeText :: Font -> (Float, Float)
 
   
 empty :: AnimWriter
@@ -106,3 +108,18 @@ getContext = do
 --         attributes = "style=\"border:1px \
 --                      \solid #000000; \
 --                      \top:0px;bottom:0px;left:0px;right:0px;\""                          
+slideWidth :: IO Float
+slideWidth = do
+  win <- currentWindowUnchecked
+  fromIntegral <$> getInnerWidth win
+
+slideHeight :: IO Float
+slideHeight = do
+  win <- currentWindowUnchecked
+  fromIntegral <$> getInnerHeight win
+
+-- (%-) :: Float -> IO Float
+-- xPercent %- 
+
+(%%) :: Float -> Float -> Float
+val %% percent = (percent / 100) * val

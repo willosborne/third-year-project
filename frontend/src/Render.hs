@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving, NamedFieldPuns #-}
 
 module Render where
 
@@ -18,10 +18,17 @@ import qualified GHCJS.DOM.TextMetrics as TextMetrics (getWidth)
 
 import           Control.Monad.Reader
 
-type RenderM a = ReaderT ImageDB IO a
+type RenderM a = ReaderT RenderInfo IO a
+
+data RenderInfo = RenderInfo {
+  textAlign :: TextAlign,
+  imageDB :: ImageDB
+}
 
 renderContent :: CanvasRenderingContext2D -> Content -> ImageDB -> IO ()
-renderContent ctx content db = runReaderT (render ctx content) db
+renderContent ctx content db = runReaderT
+                               (render ctx content)
+                               (RenderInfo { textAlign=AlignLeft, imageDB=db })
 
 degreesToRadians :: Floating a => a -> a
 degreesToRadians degrees = degrees * (pi / 180)
@@ -74,7 +81,6 @@ render ctx (Rotate angle' c) = do
   rotate ctx angle
   render ctx c
   restore ctx
-  -- rotate ctx (-angle)
   where
     angle = degreesToRadians angle'
 
@@ -185,15 +191,19 @@ render ctx (Circle radius) = do
 render ctx (FCircle radius) = do
   render ctx (FRegularPolygon 60 radius)
 
+render ctx (AlignText align c) = do
+  local (\RenderInfo { imageDB } -> RenderInfo { imageDB, textAlign=align }) (render ctx c)
+
 render ctx (Text font width' text) = do
   setFont ctx font
-  setTextAlign ctx "left"
+  RenderInfo { textAlign } <- ask
+  setTextAlign ctx (show textAlign)
   case width' of
     Just width -> renderTextWrapped ctx text width 40 --TODO automate text height property
     _          -> fillText ctx text 0 0 Nothing
 
 render ctx (Image imageName size) = do
-  imageDB <- ask
+  RenderInfo { imageDB } <- ask
   (ImageData img) <- liftIO $ getImage imageDB imageName
   case size of
     Original -> do

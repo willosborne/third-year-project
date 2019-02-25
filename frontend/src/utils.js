@@ -13,8 +13,11 @@ function preloadImages(urls, callback) {
         callback(images);
       }
     }
+    // TODO: gracefully recover from GET errors on missing images
+    // images[i].onerror = function () {
+      
+    // }
     images[i].src = urls[i];
-
   }
 }
 
