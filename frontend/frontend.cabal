@@ -15,7 +15,7 @@ build-type:          Simple
 cabal-version:       >=1.10
                       
 library                    
-  ghc-options:         -Wall -O2 
+  ghc-options:         -Wall -O 
   exposed-modules:     Content
                      , Render
                      , Image
@@ -49,7 +49,7 @@ library
 
 executable frontend
   main-is:             Main.hs
-  ghc-options:         -O2 -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -O -threaded -rtsopts -with-rtsopts=-N
   -- other-extensions:    
   other-modules:       Life
                      , Presentation

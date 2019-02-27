@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving, NamedFieldPuns #-}
+{-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving, NamedFieldPuns, BangPatterns #-}
 
 module Render where
 
@@ -26,7 +26,7 @@ data RenderInfo = RenderInfo {
 }
 
 renderContent :: CanvasRenderingContext2D -> Content -> ImageDB -> IO ()
-renderContent ctx content db = runReaderT
+renderContent ctx !content db = runReaderT
                                (render ctx content)
                                (RenderInfo { textAlign=AlignLeft, imageDB=db })
 

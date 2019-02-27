@@ -1,4 +1,4 @@
-{-# LANGUAGE NamedFieldPuns, RecursiveDo #-}
+{-# LANGUAGE NamedFieldPuns, RecursiveDo, BangPatterns #-}
 module Slide where
 
 import Content
@@ -157,7 +157,7 @@ renderTaggedIndexedAnimationB :: CanvasRenderingContext2D
                               -> Behaviour (Int, TaggedAnimation)
                               -> IO ()
 renderTaggedIndexedAnimationB ctx imageDB animB = do
-  (_, (anim, _)) <- sync $ sample animB
+  (_, (!anim, _)) <- sync $ sample animB
   renderContent ctx (renderAnimation anim) imageDB
 
 -- |Sample and render a list of tagged, indexed animation 'Behaviour's.
@@ -165,13 +165,13 @@ renderAnimationBListB :: CanvasRenderingContext2D
                      -> ImageDB
                      -> Behaviour [Behaviour (Int, TaggedAnimation)]
                      -> IO ()
-renderAnimationBListB ctx imageDB animsBListB = do
+renderAnimationBListB ctx imageDB !animsBListB = do
   animsBList <- sync $ sample animsBListB
   mapM_ (renderTaggedIndexedAnimationB ctx imageDB) animsBList
 
 -- |Like 'updateAnimation', but for tagged, indexed versions.
 updateTaggedIndexedAnimation :: Int -> (Int, TaggedAnimation) -> (Int, TaggedAnimation)
-updateTaggedIndexedAnimation dt (i, (anim, key)) = (i, (updateAnimation dt anim, key))
+updateTaggedIndexedAnimation dt (i, (!anim, key)) = (i, (updateAnimation dt anim, key))
 
 indexOrLast :: [a] -> Int -> a
 indexOrLast list i
@@ -204,7 +204,7 @@ makeSlide anims ctx _ imageDB inputs _ fps = do
                                                                             (i /= index)) animsIndexed
       
       animActive :: (Int, TaggedAnimation) -> Int -> Bool                                                    
-      animActive whole@(i, _) currentI = (i <= currentI) && largestVal filtered
+      animActive !whole@(i, _) currentI = (i <= currentI) && largestVal filtered
         where
           largestVal [] = True
           largestVal ((i', _):xs)
@@ -212,10 +212,14 @@ makeSlide anims ctx _ imageDB inputs _ fps = do
             | otherwise = largestVal xs
           filtered = filteredAnims whole currentI
 
-  let stepV = ((1 <$ next) <> ((-1) <$ previous))
-      step  = (+) <$> stepV
-      stepM = (*) <$> stepV
-  stepB <- hold (*1) stepM
+  -- NOTE: this code appears to be the main memory leak!! ???
+  -- let stepV = ((1 <$ next) <> ((-1) <$ previous))
+  --     step  = (+) <$> stepV
+  --     stepM = (*) <$> stepV
+  -- stepB <- hold (*1) stepM
+
+  -- let step = (+1) <$ next
+  let step = (((+1) <$ next) <> ((subtract 1) <$ previous))
 
   -- behaviour containing current index value
   currentAnimIndexB <- accumB 0 step
@@ -226,7 +230,9 @@ makeSlide anims ctx _ imageDB inputs _ fps = do
   let prevSlideE = () <$ filterE (< 0) currentAnimIndexE
 
   -- update the anim only if shouldTickB is currently true
-  let updateIfActiveE shouldTickB = whenE shouldTickB (updateTaggedIndexedAnimation <$> (stepB <@> tick))
+  -- NOTE: this line is a memory leak too? 
+  -- let updateIfActiveE shouldTickB = whenE shouldTickB (updateTaggedIndexedAnimation <$> (stepB <@> tick))
+  let updateIfActiveE shouldTickB = whenE shouldTickB (updateTaggedIndexedAnimation <$> tick)
       -- this takes an index and returns a behaviour that's true whenever currentAnimIndexB is equal to that index
       shouldTick anim = (animActive anim) <$> currentAnimIndexB
 
@@ -318,6 +324,7 @@ slideshow ctx doc imageDB fps slideWriter = mdo
                            (modifyInputs baseInputs currentIndexB i)
                            ((i ==) <$> currentIndexB)
                            fps) (zip slideFuncs [0..])
+  -- TODO: there is a memory leak in the program!!!
   let action (a, _, _) = a
       prev   (_, p, _) = p
       next   (_, _, n) = n
@@ -328,11 +335,18 @@ slideshow ctx doc imageDB fps slideWriter = mdo
       clampSlide i = min ((length slides) - 1) $ max 0 i
       skip = (\_ -> ((length slides) - 1)) <$ filterE (== Digit0) keyPressed
 
+  shouldRenderB <- accumB True (not <$ filterE (== Digit9) keyPressed)
+
   currentIndexB <- accumB 0 (step <> skip)
   let currentSlideB = (slides !!) <$> currentIndexB
 
+  --NOTE: skipping to the end without even calling render actions still consumes ram like mad
+  -- interestingly, sitting on the first slide does not do this
   let loop = do
         currentSlide <- sync $ sample currentSlideB
+        -- shouldRender <- sync $ sample shouldRenderB
+        -- when shouldRender $ do
         action currentSlide
+        -- threadDelay 100000
         loop
   loop

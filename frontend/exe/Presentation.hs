@@ -29,10 +29,12 @@ runPresentation = do
   imageDB <- loadImages em [("behaviour", "images/frp-behavior.png"),
                             ("event", "images/frp-event.png"),
                             ("frp-full", "images/frp-example-full.png"),
+                            ("frp-minimal", "images/frp-example-withoutstring.png"),
                             ("haskell", "images/haskell.png"),
                             ("graphics-examples-code", "images/graphics-examples-code.png"),
                             ("animation-chaining-code", "images/animation-chain-code-small.png"),
-                            ("slide-example-code", "images/slide-example-large.png")
+                            ("slide-example-code", "images/slide-example-large.png"),
+                            ("gantt-chart", "images/project-gantt.png")
                            ]
   updateTime timeRef >>= (\t -> putStrLn ("Images loaded. Time: " ++ (show t) ++ "ms."))
   
@@ -41,19 +43,24 @@ runPresentation = do
       fontH2 = "28px Garamond"
       fontH3 = "26px Garamond"
       fontH4 = "24px Garamond"
+      fontTitle = "40px Garamond"
+      fontSectionTitle = "38px Garamond"
   w <- slideWidth
   h <- slideHeight
 
   slideshow ctx doc imageDB 60 $ do
     slide $ do
-      animation [ fix (pairI Translate) (PairI (w %% 50, h %% 50)) ] $ AlignText AlignCenter $ Text "40px Garamond" Nothing "Genzai: Declarative Slideshows using FRP"
+      animation [ fix (pairI Translate) (PairI (w %% 50, h %% 50)) ] $ AlignText AlignCenter $ Text fontTitle Nothing "Genzai: Declarative Slideshows using FRP"
       
+    slide $ do
+      animation [ fix (pairI Translate) (PairI (w %% 50, h %% 50)) ] $ AlignText AlignCenter $ Text fontSectionTitle Nothing "Motivation"
     slide $ do
       animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Motivation"
       makeBullets font (w %% 20, 200) 40 (Just (w %% 60)) ctx [
-        "• Code-based authoring allows for precision and portability",
+        "• Code-based authoring allows for precision - we can get precisely the results we want",
+        "• Results are portable, requiring no specific software to view",
         "• Traditional presentation software suites have limits to their animation tools",
-        "• Existing code-based tools for presentations are very limited"       
+        "• Existing code-based tools for presentations are limited"       
         ]
       empty
     slide $ do
@@ -65,6 +72,8 @@ runPresentation = do
         "• Embedded Domain-Specific Language hosted in Haskell"
         ]
       empty
+    slide $ do
+      animation [ fix (pairI Translate) (PairI (w %% 50, h %% 50)) ] $ AlignText AlignCenter $ Text fontSectionTitle Nothing "Functional Reactive Programming"
     slide $ do
       animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Functional Reactive Programming"
       makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
@@ -89,23 +98,29 @@ runPresentation = do
       animation [] slBehaviour
     slide $ do
       animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "FRP example"
-      animation [] $ Translate (w %% 50) (h %% 50) $ Image "frp-full" Original
+      animation [] $ Translate (w %% 50) (h %% 50) $ Image "frp-minimal" Original
+    slide $ do
+      animation [ fix (pairI Translate) (PairI (w %% 50, h %% 50)) ] $ AlignText AlignCenter $ Text fontSectionTitle Nothing "Design and Development"
     slide $ do
       animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "First steps - GHCJS"
       makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
         "• GHCJS - Haskell to JavaScript compiler",
-        "• GHCJS works with almost all Haskell libraries",
+        "• GHCJS works with the entire standard library, and almost all external libraries",
         "• Foreign Function Interface allows execution of JS code in Haskell"
         ]
       empty
     slide $ do
       animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Graphics"
       makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
+        "• First major design area; implemented before any other features",
+
         "• Rendering with HTML5 Canvas requires lots of meaningless extra code",
         "• Animations need a clear and consistent interface for rendering",
-        "• First major design area; implemented before any other features",
-        "• Purely functional interface guarantees consistent rendering",
-        " ",
+        
+        "• Purely functional \"Content\" interface guarantees consistent rendering",
+        
+        "<spacer>",
+        
         "• OpenGL-style transformation matrix functions",
         "• Image pre-loader - ensure all images have loaded before rendering them"
         ]
@@ -166,6 +181,7 @@ runPresentation = do
     slide $ do
       animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Slide system"
       makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
+        "• Concept: A slide is a list of animations and static content",
         "• Simple syntax; almost no code clutter",
         "• Use animation and chain functions to add animations to slide",
         "• Standard Haskell code: can add your own functionality easily"
@@ -179,7 +195,63 @@ runPresentation = do
         "• Any function that implements the interface can be used instead!",
         "• Example: Conway's Game of Life"
         ]
-    slideGeneric lifeSlide
+      empty
+
+
+    slide $ do
+      animation [ fix (pairI Translate) (PairI (w %% 50, h %% 40)) ] $ AlignText AlignCenter $ Text fontSectionTitle Nothing "Demo"
+      animation [ makeTween tweenTranslate (PairI (w %% 50, -50)) (PairI (w %% 50, h %% 60)) easeOutBounce 1700000 ] $ AlignText AlignCenter $ Text fontH1 Nothing "You're watching it now!"
+
+    slide $ do
+      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Genzai In Action"
+      makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
+        "• Entire slideshow constructed in Genzai",
+        "• About 300 lines of code including all text, animations and content",
+        "• Live rendering of all shapes and animations",
+        "• Embedding interactive applications: Conway's Game of Life"
+        ]
+      empty
+    -- slideGeneric lifeSlide
+
+    slide $ do
+      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Project management"
+      makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
+        "• One major feature at a time, with research alongside",
+        "• Weekly meetings with project supervisor",
+        "• Use of Git for version control: shared Github repository"
+        ]
+      animation [] $ Translate (w %% 50) 350 $ Image "gantt-chart" Original
+
+    slide $ do
+      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Future work"
+      makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
+        "• Polish and release as official library",
+        "• Improving FRP system - optimisation and formal guarantees of performance",
+        "• Integration with JavaScript libraries - e.g. D3.js for powerful graphing",
+        "• Scaling presentations to look correct on every type of screen"
+        ]
+      empty
+    slide $ do
+      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Future work"
+      makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
+        "• ",
+        "• "
+        ]
+      empty
+    slide $ do
+      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Future work"
+      makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
+        "• ",
+        "• "
+        ]
+      empty
+    slide $ do
+      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Future work"
+      makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
+        "• ",
+        "• "
+        ]
+      empty
 
   
 
