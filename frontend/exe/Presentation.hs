@@ -30,7 +30,9 @@ runPresentation = do
                             ("event", "images/frp-event.png"),
                             ("frp-full", "images/frp-example-full.png"),
                             ("haskell", "images/haskell.png"),
-                            ("graphics-examples-code", "images/graphics-examples-code.png")
+                            ("graphics-examples-code", "images/graphics-examples-code.png"),
+                            ("animation-chaining-code", "images/animation-chain-code-small.png"),
+                            ("slide-example-code", "images/slide-example-large.png")
                            ]
   updateTime timeRef >>= (\t -> putStrLn ("Images loaded. Time: " ++ (show t) ++ "ms."))
   
@@ -46,15 +48,6 @@ runPresentation = do
     slide $ do
       animation [ fix (pairI Translate) (PairI (w %% 50, h %% 50)) ] $ AlignText AlignCenter $ Text "40px Garamond" Nothing "Genzai: Declarative Slideshows using FRP"
       
-    -- slide $ do
-    --   [_, _, a, _] <- makeBullets "22px Garamond" (100, 100) 40 (Just 600) ctx [
-    --     "This is the first line of text. It's not very long at all.",
-    --     "This is the second line of text. It's still not that long, but it's a bit longer than the first.",
-    --     "This is the third and final line of text. By comparison to the other two lines, it's exceptionally long, potentially rivalling the likes of Tolstoy's War and Peace and the great literary classics of the 19th Century.",
-    --     "This line is pretty short." ]
-    --   chain [ chainTween tweenTranslate (PairI (200, 200)) easeOutElastic 1000000 ] a
-    --   animation [ makeTween tweenTranslate (PairI (400, -300)) (PairI (400, 400)) easeOutBounce 1100000] $ Scale 0.7 0.7 $ Image "yoda" Original
-
     slide $ do
       animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Motivation"
       makeBullets font (w %% 20, 200) 40 (Just (w %% 60)) ctx [
@@ -130,20 +123,64 @@ runPresentation = do
       animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Graphics Example"
       animation [] $ Translate (w %% 50) (w %% 25) $ examplePair
     slide $ do
-      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Animation system"
+      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Animation system: Tweens"
       makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
         "• Works by animating a Tween on a graphics object",
         "• Any property can be tweened - position, rotation, colour, etc.",
+        "• Purely functional interface ensures consistent results",
         "• Achieve different animation styles using 'Easing functions'"
         ]
       let circle = FCircle 35
+          top = 400
       
-      animation [] $ Translate (w %% 22) 350 $ Text fontH2 Nothing "Linear"
-      animation [ makeTween tweenTranslate (PairI (w %% 50, 350)) (PairI (w %% 80, 350)) easeLinear 2000000 ] $ FillColor red $ circle
-      animation [] $ Translate (w %% 22) 430 $ Text fontH2 Nothing "Elastic"
-      animation [ makeTween tweenTranslate (PairI (w %% 50, 430)) (PairI (w %% 80, 430)) easeOutElastic 2000000 ] $ FillColor green $ circle
-      animation [] $ Translate (w %% 22) 510 $ Text fontH2 Nothing "Bounce"
-      animation [ makeTween tweenTranslate (PairI (w %% 50, 510)) (PairI (w %% 80, 510)) easeOutBounce 2000000 ] $ FillColor blue $ circle
+      animation [] $ Translate (w %% 22) top $ Text fontH2 Nothing "Linear"
+      animation [ makeTween tweenTranslate (PairI (w %% 50, top)) (PairI (w %% 80, top)) easeLinear 1500000 ] $ FillColor red circle
+      animation [] $ Translate (w %% 22) (top + 80) $ Text fontH2 Nothing "Elastic"
+      animation [ makeTween tweenTranslate (PairI (w %% 50, top + 80)) (PairI (w %% 80, top + 80)) easeOutElastic 1500000 ] $ FillColor amber circle
+      animation [] $ Translate (w %% 22) (top + 160) $ Text fontH2 Nothing "Bounce"
+      animation [ makeTween tweenTranslate (PairI (w %% 50, top + 160)) (PairI (w %% 80, top + 160)) easeOutBounce 1500000 ] $ FillColor green circle
+
+    slide $ do
+      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Animation system: Chaining"
+      makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
+        "• Animations can be chained together",
+        "• If you can animate it, you can chain it",
+        "• Implementation of this feature required significant design decisions"
+        ]
+      animation [] $ Translate (w %% 40) 480 $ Image "animation-chaining-code" Original
+  
+      let rect = FRect 70 70
+      
+      a1 <- animation [ makeTween tweenTranslate (PairI (w %% 70, 200)) (PairI (w %% 85, 200)) easeInOutCubic 1500000
+                      , makeTween tweenFillColor (ColorI black) (ColorI red) easeLinear 1500000 ] rect
+      chain [ chainTween tweenTranslate (PairI (w %% 85, h %% 90)) easeOutBounce 1500000
+            , chainTween tweenFillColor (ColorI blue) easeOutBounce 1500000 ] a1
+    slide $ do
+      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "FRP framework"
+      makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
+        "• Based on Sodium framework",
+        "• Simple and easy to use compared to most FRP libraries",
+        "• Can be used for anything: not just slideshows!"
+        ]
+      empty
+    slide $ do
+      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Slide system"
+      makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
+        "• Simple syntax; almost no code clutter",
+        "• Use animation and chain functions to add animations to slide",
+        "• Standard Haskell code: can add your own functionality easily"
+        ]
+      animation [] $ Translate (w %% 50) 350 $ Image "slide-example-code" Original
+    slide $ do
+      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Slideshow interface"
+      makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
+        "• General interface for displaying on-screen content",
+        "• The slide/animation system implements this for ease of use",
+        "• Any function that implements the interface can be used instead!",
+        "• Example: Conway's Game of Life"
+        ]
     slideGeneric lifeSlide
+
+  
 
   

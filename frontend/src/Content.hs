@@ -59,12 +59,13 @@ data Color = RGBA Int Int Int Float
            deriving (Eq)
 -- NOTE: consider adding Transparent as a way of setting no fill
 
-black, white, red, green, blue :: Color
+black, white, red, green, blue, amber :: Color
 black = (RGB 0 0 0)
 white = (RGB 255 255 255)
 red = (RGB 255 0 0)
 green = (RGB 0 255 0)
 blue = (RGB 0 0 255)
+amber = (RGB 255 191 0)
 
 instance Show Color where
   show (RGBA r g b a) = "rgba(" ++
