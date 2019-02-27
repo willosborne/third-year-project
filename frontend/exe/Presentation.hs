@@ -118,10 +118,10 @@ runPresentation = do
         "• Animations need a clear and consistent interface for rendering",
         
         "• Purely functional \"Content\" interface guarantees consistent rendering",
+        "• OpenGL-style transformation matrix functions",
         
         "<spacer>",
         
-        "• OpenGL-style transformation matrix functions",
         "• Image pre-loader - ensure all images have loaded before rendering them"
         ]
       empty
@@ -140,7 +140,8 @@ runPresentation = do
     slide $ do
       animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Animation system: Tweens"
       makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
-        "• Works by animating a Tween on a graphics object",
+        "• Animate a property of an object by 'tweening' it between two values.",
+        "• A tween takes a visual property of an object, and animates it between two values",
         "• Any property can be tweened - position, rotation, colour, etc.",
         "• Purely functional interface ensures consistent results",
         "• Achieve different animation styles using 'Easing functions'"
@@ -158,7 +159,7 @@ runPresentation = do
     slide $ do
       animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Animation system: Chaining"
       makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
-        "• Animations can be chained together",
+        "• Animations can be chained together - each starts where the previous one ended",
         "• If you can animate it, you can chain it",
         "• Implementation of this feature required significant design decisions"
         ]
@@ -188,7 +189,7 @@ runPresentation = do
         ]
       animation [] $ Translate (w %% 50) 350 $ Image "slide-example-code" Original
     slide $ do
-      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Slideshow interface"
+      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Generic Slideshow Interface"
       makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
         "• General interface for displaying on-screen content",
         "• The slide/animation system implements this for ease of use",
@@ -211,7 +212,8 @@ runPresentation = do
         "• Embedding interactive applications: Conway's Game of Life"
         ]
       empty
-    -- slideGeneric lifeSlide
+  
+    slideGeneric lifeSlide
 
     slide $ do
       animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Project management"
