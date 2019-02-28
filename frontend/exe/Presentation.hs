@@ -141,7 +141,7 @@ runPresentation = do
       animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Animation system: Tweens"
       makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
         "• Animate a property of an object by 'tweening' it between two values.",
-        "• A tween takes a visual property of an object, and animates it between two values",
+        -- "• A tween takes a visual property of an object, and animates it between two values",
         "• Any property can be tweened - position, rotation, colour, etc.",
         "• Purely functional interface ensures consistent results",
         "• Achieve different animation styles using 'Easing functions'"
@@ -216,13 +216,39 @@ runPresentation = do
     slideGeneric lifeSlide
 
     slide $ do
-      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Project management"
+      animation [ fix (pairI Translate) (PairI (w %% 50, h %% 40)) ] $ AlignText AlignCenter $ Text fontSectionTitle Nothing "Project Management"
+
+    slide $ do
+      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Project Management"
       makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
         "• One major feature at a time, with research alongside",
         "• Weekly meetings with project supervisor",
         "• Use of Git for version control: shared Github repository"
         ]
       animation [] $ Translate (w %% 50) 350 $ Image "gantt-chart" Original
+
+    slide $ do
+      animation [ fix (pairI Translate) (PairI (w %% 50, h %% 40)) ] $ AlignText AlignCenter $ Text fontSectionTitle Nothing "Evaluation"
+
+    slide $ do
+      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Contributions and Technical Achievements"
+      makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
+        "• Achieved goal of simple, declarative syntax",
+        "• Zero dependencies to run presentations - highly portable",
+        "• Most powerful code-based presentation tool I have found",
+        "• Seamless integration of interactive content and presentations is a unique feature",
+        "• Combines features of multiple Haskell frameworks in a cohesive way"
+        ]
+      empty
+
+    slide $ do
+      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Lessons learnt"
+      makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
+        "• Development of large projects in Haskell is very productive",
+        "• Sometimes it is easier to reinvent the wheel when libraries are undocumented",
+        "• Academic Haskell papers present a simplified view; internally much more complex"
+        ]
+      empty
 
     slide $ do
       animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Future work"
@@ -233,27 +259,17 @@ runPresentation = do
         "• Scaling presentations to look correct on every type of screen"
         ]
       empty
+
     slide $ do
-      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Future work"
-      makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
-        "• ",
-        "• "
-        ]
-      empty
-    slide $ do
-      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Future work"
-      makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
-        "• ",
-        "• "
-        ]
-      empty
-    slide $ do
-      animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Future work"
-      makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
-        "• ",
-        "• "
-        ]
-      empty
+      animation [ fix (pairI Translate) (PairI (w %% 50, h %% 40)) ] $ AlignText AlignCenter $ Text fontSectionTitle Nothing "Questions?"
+
+    -- slide $ do
+    --   animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Future work"
+    --   makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
+    --     "• ",
+    --     "• "
+    --     ]
+    --   empty
 
   
 
