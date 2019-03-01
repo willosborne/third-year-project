@@ -258,7 +258,22 @@ wordsToLineCount ctx maxWidth wordList = wordsToLinesInternal wordList "" 1
         _           -> wordsToLinesInternal ws word (lineCount + 1)
 
 
-clearScreen :: CanvasRenderingContext2D -> IO ()
-clearScreen ctx = do
-  clearRect ctx 0 0 6000 4000
+--TODO consider moving this out of Render (Utils?) so user does not need to import it
+-- |Set the canvas fill color. This has side effects.
+setDefaultFillColor :: CanvasRenderingContext2D -> Color -> IO ()
+setDefaultFillColor ctx color = do
+  let colorStr = toJSString $ show color
+  setFillStyle ctx $ CanvasStyle colorStr
+
+clearScreen :: CanvasRenderingContext2D -> Color -> IO ()
+clearScreen ctx color = do
+  save ctx
+
+  setDefaultFillColor ctx color
+
+  fillRect ctx 0 0 6000 4000
+
+  restore ctx
+  
   setTransform ctx 1 0 0 1 0 0 
+  

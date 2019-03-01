@@ -26,6 +26,7 @@ import Data.Unique
 import Control.Monad
 import Control.Monad.Trans
 import Control.Monad.Writer hiding (listen)
+import Control.Monad.Reader 
 import Control.Concurrent
 import Control.Applicative
 
@@ -179,6 +180,7 @@ indexOrLast list i
   | otherwise                 = last list
 
 makeSlide :: [(Animation, Unique)]
+          -> Color
           -> CanvasRenderingContext2D
           -> document
           -> ImageDB
@@ -186,7 +188,7 @@ makeSlide :: [(Animation, Unique)]
           -> Behaviour Bool
           -> Int
           -> IO ((IO (), Event (), Event ())) -- render, previous slide, next slide
-makeSlide anims ctx _ imageDB inputs _ fps = do
+makeSlide anims bgColor ctx _ imageDB inputs _ fps = do
   let Inputs { next, previous, tick } = inputs
   
   timeRef <- initTime
@@ -247,7 +249,7 @@ makeSlide anims ctx _ imageDB inputs _ fps = do
   let currentAnimsB = filterM (\animB -> liftA2 animActive animB currentAnimIndexB) animsB
 
   let loop = do
-        clearScreen ctx
+        clearScreen ctx bgColor
 
         renderAnimationBListB ctx imageDB currentAnimsB
 
@@ -263,23 +265,41 @@ makeSlide anims ctx _ imageDB inputs _ fps = do
 type SlideFunc document = CanvasRenderingContext2D -> document -> ImageDB -> Inputs -> Behaviour Bool -> Int -> IO (IO (), Event (), Event ())
 
 -- we collect a list of rendering functions - animations etc are already passed in
-type SlideWriter document = WriterT [SlideFunc document]
-                            IO ()
+type SlideWriter document = ReaderT Color (WriterT [SlideFunc document] IO) ()
 
 slide :: (IsEventTarget document, IsDocument document)
       => AnimWriter
       -> SlideWriter document
 slide animWriter = do
   anims <- liftIO $ execWriterT animWriter
-  let out = makeSlide anims
+  color <- ask
+  let out = makeSlide anims color
   tell [out]
+
+slide' :: (IsEventTarget document, IsDocument document)
+       => Color
+       -> AnimWriter
+       -> SlideWriter document
+slide' bgColor animWriter = do
+  anims <- liftIO $ execWriterT animWriter
+  let out = makeSlide anims bgColor
+  tell [out]
+
+
+background :: (IsEventTarget document, IsDocument document)
+           => Color
+           -> SlideWriter document
+           -> SlideWriter document
+background color slideWriter = local (\_ -> color) slideWriter
+         
   
-slideList :: (IsEventTarget document, IsDocument document)
-          => [TaggedAnimation]
-          -> SlideWriter document
-slideList anims = do
-  let out = makeSlide anims
-  tell [out]
+-- slideList :: (IsEventTarget document, IsDocument document)
+--           => [TaggedAnimation]
+--           -> SlideWriter document
+-- slideList anims = do
+--   color <- ask
+--   let out = makeSlide anims color
+--   tell [out]
 
 slideGeneric :: (IsEventTarget document, IsDocument document)
              => SlideFunc document
@@ -316,7 +336,8 @@ slideshow :: (IsEventTarget document, IsDocument document)
           -> IO ()
 slideshow ctx doc imageDB fps slideWriter = mdo
   -- NOTE: use of recursive do to avoid circular definition
-  slideFuncs <- execWriterT slideWriter
+  slideFuncs <- execWriterT $ runReaderT slideWriter white
+
   baseInputs <- generateInputs doc fps
   let Inputs { keyPressed } = baseInputs
 
