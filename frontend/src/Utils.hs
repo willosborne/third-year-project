@@ -21,14 +21,15 @@ import           GHCJS.DOM.NonElementParentNode (getElementById)
 import           GHCJS.DOM.Window (getInnerWidth, getInnerHeight)
 import qualified GHCJS.DOM.HTMLCanvasElement as H (getContext) 
 
-makeBullets :: Font
-            -> (Float, Float)
-            -> Float
-            -> Maybe Float
-            -> CanvasRenderingContext2D
-            -> [String]
-            -> WriterT [(Animation, Unique)] IO [(Animation, Unique)]
-makeBullets font (x0, y0) lineGap Nothing _ paragraphs  = do
+
+makeBulletsAnimated :: Font
+                    -> (Float, Float)
+                    -> Float
+                    -> Maybe Float
+                    -> CanvasRenderingContext2D
+                    -> [String]
+                    -> WriterT [(Animation, Unique)] IO [(Animation, Unique)]
+makeBulletsAnimated font (x0, y0) lineGap Nothing _ paragraphs  = do
   let loop :: Float -> [String] -> WriterT [(Animation, Unique)] IO [(Animation, Unique)]
       loop _ [] = return []
       loop y (para:paras) = do
@@ -42,7 +43,7 @@ makeBullets font (x0, y0) lineGap Nothing _ paragraphs  = do
           return $ anim : anims
   list <- loop y0 paragraphs
   return list
-makeBullets font (x0, y0) lineGap (Just maxWidth) ctx paragraphs  = do
+makeBulletsAnimated font (x0, y0) lineGap (Just maxWidth) ctx paragraphs  = do
   let loop :: Float -> [String] -> WriterT [(Animation, Unique)] IO [(Animation, Unique)]
       loop _ [] = return []
       loop y (para:paras) = do
@@ -55,9 +56,68 @@ makeBullets font (x0, y0) lineGap (Just maxWidth) ctx paragraphs  = do
           noLines <- liftIO $ wordsToLineCount ctx maxWidth (words para)
           anims <- loop (y + (lineGap * (fromIntegral noLines))) paras
           return $ anim : anims
+  save ctx
   setFont ctx font
   list <- loop y0 paragraphs
+  restore ctx
   return list
+
+
+-- TODO: make this return a list of animations rather than just the one - so that points can be animated afterwards
+makeBullets :: Font
+            -> (Float, Float)
+            -> Float
+            -> Maybe Float
+            -> CanvasRenderingContext2D
+            -> [String]
+            -> AnimWriter
+makeBullets font (x0, y0) lineGap Nothing _ paragraphs  = do
+  let loop :: Float -> [String] -> Content
+      loop _ [] = Empty
+      loop y (para:paras) =
+        if (para == "<spacer>") then
+          (loop (y + lineGap) paras)
+        else let content = Translate 0 y $ Text font Nothing para
+                 c = loop (y + lineGap) paras
+             in content <> c
+  let content = loop 0 paragraphs
+  animation [ fix (pairI Translate) (PairI (x0, y0)) ] content
+
+makeBullets font (x0, y0) lineGap (Just maxWidth) ctx paragraphs  = do
+  let loop :: Float -> [String] -> IO Content
+      loop _ [] = return Empty
+      loop y (para:paras) = do
+        if (para == "<spacer>")
+          then do
+            (loop (y + lineGap) paras)
+          else do
+            let content = Translate 0 y $ Text font (Just maxWidth) para
+
+            noLines <- liftIO $ wordsToLineCount ctx maxWidth (words para)
+            c <- loop (y + (lineGap * (fromIntegral noLines))) paras
+            return $ content <> c
+  save ctx
+  setFont ctx font
+  content <- liftIO $ loop 0 paragraphs
+  restore ctx
+  animation [ fix (pairI Translate) (PairI (x0, y0)) ] $ content 
+
+-- makeBulletsStatic font (x0, y0) lineGap (Just maxWidth) ctx paragraphs  = do
+--   let loop :: Float -> [String] -> WriterT [(Animation, Unique)] IO [(Animation, Unique)]
+--       loop _ [] = return []
+--       loop y (para:paras) = do
+--         if (para == "<spacer>") then do
+--           list <- loop (y + lineGap) paras
+--           return list
+--         else do
+--           anim <- liftIO $ makeAnimationTagged [ fix (pairI Translate) (PairI (x0, y)) ] $ Text font (Just maxWidth) para
+--           tell [anim]
+--           noLines <- liftIO $ wordsToLineCount ctx maxWidth (words para)
+--           anims <- loop (y + (lineGap * (fromIntegral noLines))) paras
+--           return $ anim : anims
+--   setFont ctx font
+--   list <- loop y0 paragraphs
+--   return list
 
 -- makeText :: Font -> (Float, Float)
 

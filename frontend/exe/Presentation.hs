@@ -19,7 +19,6 @@ import Life
 backgroundColor :: Color
 backgroundColor = RGB 40 40 40
 
-
 runPresentation :: IO ()
 runPresentation = do
   doc <- getDocument

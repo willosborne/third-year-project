@@ -81,7 +81,7 @@ helloMain = do
 
   slideshow ctx doc imageDB 60 $ do
     slide $ do
-      [_, a, _, _] <- makeBullets "22px Garamond" (100, 100) 40 (Just 600) ctx [
+      [_, a, _, _] <- makeBulletsAnimated "22px Garamond" (100, 100) 40 (Just 600) ctx [
         "This is the first line of text. It's not very long at all.",
         "This is the second line of text. It's still not that long, but it's a bit longer than the first.",
         "This is the third and final line of text. By comparison to the other two lines, it's exceptionally long, potentially rivalling the likes of Tolstoy's War and Peace and the great literary classics of the 19th Century.",
