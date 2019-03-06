@@ -36,7 +36,7 @@ runPresentation = do
                             ("frp-minimal", "images/frp-example-withoutstring.png"),
                             ("haskell", "images/haskell.png"),
                             ("graphics-examples-code", "images/graphics-examples-code.png"),
-                            ("animation-chaining-code", "images/animation-chain-code-small.png"),
+                            ("animation-chaining-code", "images/animation-chain-code.png"),
                             ("slide-example-code", "images/slide-example-large.png"),
                             ("gantt-chart", "images/project-gantt.png")
                            ]
@@ -57,7 +57,7 @@ runPresentation = do
   slideshow ctx doc imageDB 60 $ do
     background backgroundColor $ do
       slide $ do
-        animation [ fix (pairI Translate) (PairI (w %% 50, h %% 50)) ] $ AlignText AlignCenter $ Text fontTitle Nothing "Genzai: Declarative Slideshows using FRP"
+        animation [ fix (pairI Translate) (PairI (w %% 50, h %% 50)) ] $ AlignText AlignCenter $ (Text fontTitle Nothing "Genzai: Declarative Slideshows using FRP") <> (Translate 0 70 $ Text fontH1 Nothing "Will Osborne")
         
       slide $ do
         animation [ fix (pairI Translate) (PairI (w %% 50, h %% 50)) ] $ AlignText AlignCenter $ Text fontSectionTitle Nothing "Motivation"
@@ -144,7 +144,7 @@ runPresentation = do
                                                StrokeColor (RGB 0 255 0) $
                                                StrokeWidth 4 $ FCircle 100))
         animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Graphics Example"
-        animation [] $ Translate (w %% 50) (w %% 25) $ examplePair
+        animation [] $ Translate (w %% 50) (w %% 30) $ examplePair
       slide $ do
         animation [] $ Translate (w %% 50) 100 $ AlignText AlignCenter $ Text fontH1 Nothing "Animation system: Tweens"
         makeBullets font (w %% 20, 200) 40 (Just (w %% 50)) ctx [
@@ -171,7 +171,7 @@ runPresentation = do
           "• If you can animate it, you can chain it",
           "• Implementation of this feature required significant design decisions"
           ]
-        animation [] $ Translate (w %% 40) 480 $ Image "animation-chaining-code" Original
+        animation [] $ Translate (w %% 50) (h %% 40) $ Scale 0.9 0.9 $ Image "animation-chaining-code" Original
   
         let rect = FRect 70 70
         
@@ -244,8 +244,7 @@ runPresentation = do
           "• Achieved goal of simple, declarative syntax",
           "• Zero dependencies to run presentations - highly portable",
           "• Most powerful code-based presentation tool I have found",
-          "• Seamless integration of interactive content and presentations is a unique feature",
-          "• Combines features of multiple Haskell frameworks in a cohesive way"
+          "• Seamless integration of interactive content and presentations is a unique feature"
           ]
         empty
 
@@ -269,7 +268,8 @@ runPresentation = do
         empty
 
       slide $ do
-        animation [ fix (pairI Translate) (PairI (w %% 50, h %% 40)) ] $ AlignText AlignCenter $ Text fontSectionTitle Nothing "Questions?"
+        -- animation [ fix (pairI Translate) (PairI (w %% 50, h %% 40)) ] $ AlignText AlignCenter $ Text fontSectionTitle Nothing "Questions"
+        animation [ makeTween tweenTranslate (PairI (w %% 50, -50)) (PairI (w %% 50, h %% 50)) easeOutElastic 1700000 ] $ AlignText AlignCenter $ Text fontSectionTitle Nothing "Questions"
 
   
 
