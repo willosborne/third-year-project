@@ -1,7 +1,6 @@
 {-# LANGUAGE GADTs, GeneralizedNewtypeDeriving #-}
 module Reactive.FRPSimple where
 
--- http://travis.athougies.net/posts/2015-05-05-frp-made-simple.html
 import Control.Applicative
 import Control.Monad.Trans
 import Control.Monad.Writer hiding (listen)
@@ -13,10 +12,11 @@ import Data.Unique
 import Data.Monoid
 import Data.IORef
 
-import System.Mem.Weak -- oh god, weak pointers
+import System.Mem.Weak 
 
 type React = IO
--- Moment now builds up a list of IOs inside it -- subcomputations built up with >>=
+-- Moment builds up a list of IOs inside it -- subcomputations built up with >>=
+-- these actions are to be run after the main action is carried out in a sync call
 newtype Moment a = Moment { runMoment :: StateT (S.Set Unique) (WriterT ([IO ()], [IO ()]) IO) a }
   deriving ( Monad,
              Applicative,
@@ -249,7 +249,8 @@ apply bab ea = Event (\listener -> eventRegisterListener ea $ \x -> do
 ba <@ eb = Event (\listener -> eventRegisterListener eb $
                    \_ -> (sample ba >>= listener))
 
--- |Fire an event only when the behaviour evaluates True
+-- |Fire an event only when the behaviour evaluates to True.
+-- Equivalent to Sodium's 'gate'.
 whenE :: Behaviour Bool -> Event a -> Event a
 whenE bbool ea = Event (\listener -> eventRegisterListener ea $ \x -> do
                            firep <- sample bbool
@@ -260,5 +261,20 @@ whenE bbool ea = Event (\listener -> eventRegisterListener ea $ \x -> do
 filterE :: (a -> Bool) -> Event a -> Event a
 filterE p ea = Event (\listener -> eventRegisterListener ea $ \x ->
                          when (p x) $ listener x)
+
+-- |Filter an Event containing Maybe values, and ignore the event when it fires with Nothing.
+filterJust :: Event (Maybe a) -> Event a
+filterJust ea = Event (\listener -> eventRegisterListener ea $ \maybeA ->
+                          case maybeA of
+                            Just a  -> listener a
+                            Nothing -> pure ())
+
+-- |Flatten an Event containing a Moment to a regular Event
+execute :: Event (Moment a) -> React (Event a)
+execute evt = do
+  (register, propagate) <- newEventRegistration
+  unregister <- eventRegisterListener evt (\moment -> moment >>= propagate)
+
+  return $ Event register
                        
 -- filterBList :: (a -> Bool) -> [Behaviour a] -> [Behaviour a]

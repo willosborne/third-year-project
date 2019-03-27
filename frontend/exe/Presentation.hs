@@ -1,6 +1,5 @@
 module Presentation where
 
-
 import Slide
 import Animation
 import Content
@@ -14,7 +13,6 @@ import Render (setDefaultFillColor)
 import Data.Monoid ((<>))
 
 import Life
-
 
 backgroundColor :: Color
 backgroundColor = RGB 40 40 40
@@ -55,6 +53,15 @@ runPresentation = do
   setDefaultFillColor ctx white
 
   slideshow ctx doc imageDB 60 $ do
+    slide $ do
+      animation [ fix (pairI Translate) (PairI (w %% 50, h %% 50)) ] $ StrokeWidth 3 $ Translate 100 100 (Rotate 45 (RegularPolygon 3 100))
+      
+    slide $ do
+      animation [ fix (pairI Translate) (PairI (w %% 40, h %% 50)) ] $ FillColor red $ StrokeWidth 3 $ FCircle 100
+      animation [ fix (pairI Translate) (PairI (w %% 60, h %% 50)) ] $ FillColor black $ StrokeWidth 3 $ FCircle 100
+
+    slide $ do
+      animation [ fix (pairI Translate) (PairI (w %% 50, h %% 50)) ] $ FillColor red $ StrokeWidth 3 $FCircle 100
     background backgroundColor $ do
       slide $ do
         animation [ fix (pairI Translate) (PairI (w %% 50, h %% 50)) ] $ AlignText AlignCenter $ (Text fontTitle Nothing "Genzai: Declarative Slideshows using FRP") <> (Translate 0 70 $ Text fontH1 Nothing "Will Osborne")
