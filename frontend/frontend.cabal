@@ -32,7 +32,7 @@ library
   js-sources:          src/utils.js
   -- other-extensions:    
   build-depends:       base >=4.9 && <4.12
-                     , common
+                     -- , common
                      , reflex-dom
                      , ghcjs-dom >= 0.9 && <0.10
                      , ghcjs-dom-jsffi 
@@ -54,7 +54,7 @@ executable frontend
   other-modules:       Life
                      , Presentation
   build-depends:       base >=4.9 && <4.12
-                     , common
+                     -- , common
                      , reflex-dom
                      , ghcjs-dom >= 0.9 && <0.10
                      , ghcjs-dom-jsffi 

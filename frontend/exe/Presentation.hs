@@ -19,13 +19,14 @@ backgroundColor = RGB 40 40 40
 
 runPresentation :: IO ()
 runPresentation = do
+  -- setup code
   doc <- getDocument
-
   ctx <- getContext
   timeRef <- initTime
 
   setTitle "Genzai: Declarative Slideshows with FRP"
   
+  -- initialise image preloader
   em <- emptyDB
   _ <- updateTime timeRef
   imageDB <- loadImages em [("behaviour", "images/frp-behavior.png"),
@@ -52,18 +53,20 @@ runPresentation = do
 
   setDefaultFillColor ctx white
 
+  -- start slideshow
   slideshow ctx doc imageDB 60 $ do
-    slide $ do
-      animation [ fix (pairI Translate) (PairI (w %% 30, h %% 50)) ] $ FillColor black $ Text font (Just 500) "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
-    slide $ do
-      animation [ fix (pairI Translate) (PairI (w %% 50, h %% 50)) ] $ StrokeWidth 3 $ Translate 100 100 (Rotate 45 (RegularPolygon 3 100))
+    -- slide $ do
+    --   animation [ fix (pairI Translate) (PairI (w %% 30, h %% 50)) ] $ FillColor black $ Text font (Just 500) "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
+    -- slide $ do
+    --   animation [ fix (pairI Translate) (PairI (w %% 50, h %% 50)) ] $ StrokeWidth 3 $ Translate 100 100 (Rotate 45 (RegularPolygon 3 100))
       
-    slide $ do
-      animation [ fix (pairI Translate) (PairI (w %% 40, h %% 50)) ] $ FillColor red $ StrokeWidth 3 $ FCircle 100
-      animation [ fix (pairI Translate) (PairI (w %% 60, h %% 50)) ] $ FillColor black $ StrokeWidth 3 $ FCircle 100
+    -- slide $ do
+    --   animation [ fix (pairI Translate) (PairI (w %% 40, h %% 50)) ] $ FillColor red $ StrokeWidth 3 $ FCircle 100
+    --   animation [ fix (pairI Translate) (PairI (w %% 60, h %% 50)) ] $ FillColor black $ StrokeWidth 3 $ FCircle 100
 
-    slide $ do
-      animation [ fix (pairI Translate) (PairI (w %% 50, h %% 50)) ] $ FillColor red $ StrokeWidth 3 $FCircle 100
+    -- slide $ do
+    --   animation [ fix (pairI Translate) (PairI (w %% 50, h %% 50)) ] $ FillColor red $ StrokeWidth 3 $FCircle 100
+    -- set background colour for main presentation
     background backgroundColor $ do
       slide $ do
         animation [ fix (pairI Translate) (PairI (w %% 50, h %% 50)) ] $ AlignText AlignCenter $ (Text fontTitle Nothing "Genzai: Declarative Slideshows using FRP") <> (Translate 0 70 $ Text fontH1 Nothing "Will Osborne")
@@ -277,9 +280,4 @@ runPresentation = do
         empty
 
       slide $ do
-        -- animation [ fix (pairI Translate) (PairI (w %% 50, h %% 40)) ] $ AlignText AlignCenter $ Text fontSectionTitle Nothing "Questions"
         animation [ makeTween tweenTranslate (PairI (w %% 50, -50)) (PairI (w %% 50, h %% 50)) easeOutElastic 1700000 ] $ AlignText AlignCenter $ Text fontSectionTitle Nothing "Questions"
-
-  
-
-  
