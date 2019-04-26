@@ -32,6 +32,8 @@ data Content =
   | Image String ImageSize
   deriving (Eq, Show)
   -- TODO add splines and arcs
+--TODO consider adding a raw IO () option to allow any rendering operation to be carried out
+--TODO nested colour transforms probably do not work at the moment. e.g. fade an object that has its colour set internally
 
 (<!>) :: Content -> Content -> Content
 (<!>) = Combine

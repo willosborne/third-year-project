@@ -345,7 +345,6 @@ slideshow ctx doc imageDB fps slideWriter = mdo
                            (modifyInputs baseInputs currentIndexB i)
                            ((i ==) <$> currentIndexB)
                            fps) (zip slideFuncs [0..])
-  -- TODO: there is a memory leak in the program!!!
   let action (a, _, _) = a
       prev   (_, p, _) = p
       next   (_, _, n) = n
@@ -361,8 +360,6 @@ slideshow ctx doc imageDB fps slideWriter = mdo
   currentIndexB <- accumB 0 (step <> skip)
   let currentSlideB = (slides !!) <$> currentIndexB
 
-  --NOTE: skipping to the end without even calling render actions still consumes ram like mad
-  -- interestingly, sitting on the first slide does not do this
   let loop = do
         currentSlide <- sync $ sample currentSlideB
         -- shouldRender <- sync $ sample shouldRenderB

@@ -49,19 +49,4 @@ loadImages (imageMap, missing) pairs = do
   return $ (foldl ins imageMap (zip names images), missing)
   where
     ins t (k, a) = insert k a t
-
--- https://stackoverflow.com/questions/37861317/how-to-convert-list-to-jsval
--- listToJSVal :: PToJSVal a => [a] -> JSVal
--- listToJSVal xs = foldl push ar xs 
---     where ar = [js'| [] |]
---           push as x = [js'| { `as.push(`x); $r = `as } |]
-
--- printArray :: JSVal -> IO ()
--- printArray as = [js_| for(i = 0;i < `as.length;i++) { console.log(`as[i]) } |]
-
-{-
-NOTE:
-Need to design system to wait for the onload callback for every image before proceeding
-Could do directly inside FFI js code, but that's kinda grim tbh
-Also want to load all at once, not one at a time!
--}
+ 

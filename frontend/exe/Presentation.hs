@@ -54,6 +54,8 @@ runPresentation = do
 
   slideshow ctx doc imageDB 60 $ do
     slide $ do
+      animation [ fix (pairI Translate) (PairI (w %% 30, h %% 50)) ] $ FillColor black $ Text font (Just 500) "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."
+    slide $ do
       animation [ fix (pairI Translate) (PairI (w %% 50, h %% 50)) ] $ StrokeWidth 3 $ Translate 100 100 (Rotate 45 (RegularPolygon 3 100))
       
     slide $ do

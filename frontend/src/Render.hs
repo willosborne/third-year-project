@@ -66,9 +66,11 @@ render ctx (Combine c1 c2) = do
   render ctx c2
 
 render ctx (Translate x y c) = do
+  save ctx
   translate ctx x y
   render ctx c
-  translate ctx (-x) (-y)
+  restore ctx
+  -- translate ctx (-x) (-y)
 
 render ctx (Scale x y c) = do
   save ctx

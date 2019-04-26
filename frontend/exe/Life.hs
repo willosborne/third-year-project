@@ -91,7 +91,7 @@ renderGrid grid = Translate 12.5 12.5 $ foldr (<>) Empty $ fmap (foldr (<>) Empt
       FRect (fromIntegral cellSize) (fromIntegral cellSize)
     renderCell x y False = Empty
                                      
-lifeSlide :: (IsEventTarget target, IsDocument target) => SlideFunc target
+lifeSlide :: (IsEventTarget document, IsDocument document) => SlideFunc document
 lifeSlide ctx doc db inputs activeB fps = do
   timeRef <- initTime
 

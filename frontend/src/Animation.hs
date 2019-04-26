@@ -24,9 +24,21 @@ type AnimControl = Double
 
 clampAnimControl :: AnimControl -> AnimControl
 clampAnimControl = max 0 . min 1
-
+ 
 
 type Ease = AnimControl -> AnimControl
+
+data Tween = Tween AnimControl Ease (AnimControl -> Content -> Content) Int
+type ChainTween = ((I -> I -> AnimControl -> Content -> Content), I, Ease, Int)
+
+-- data Animation = Animation AnimControl Ease [(AnimControl -> Content -> Content)] Content Int
+data Animation = Animation [Tween] Content
+
+
+type TaggedAnimation = (Animation, Unique)
+
+
+type AnimWriter = WriterT [TaggedAnimation] IO TaggedAnimation
 
 easeLinear :: Ease
 easeLinear = id
@@ -144,17 +156,6 @@ defaultI DefaultI = DefaultI
 
 -- parameter, ease, render function, duration
 -- data Anim = Anim AnimControl Ease (AnimControl -> Content) Int
-data Tween = Tween AnimControl Ease (AnimControl -> Content -> Content) Int
-type ChainTween = ((I -> I -> AnimControl -> Content -> Content), I, Ease, Int)
-
--- data Animation = Animation AnimControl Ease [(AnimControl -> Content -> Content)] Content Int
-data Animation = Animation [Tween] Content
-
-
-type TaggedAnimation = (Animation, Unique)
-
-
-type AnimWriter = WriterT [TaggedAnimation] IO TaggedAnimation
 
 makeAnimationPure :: [Tween] -> Content -> Animation
 makeAnimationPure = Animation
