@@ -1,10 +1,15 @@
 module Lib where
 
-import Test.Hspec
+import Test.Hspec.Runner
+import Test.Hspec.Formatters
 import Test.QuickCheck
 import Control.Exception
 
 import Content
+import ImagePreloader 
+
+import qualified Spec
+
 
 someFunc :: IO ()
 someFunc = do
@@ -12,7 +17,5 @@ someFunc = do
 
 
 runTests :: IO ()
-runTests = hspec $ do
-  describe "Content" $ do
-    it "Test" $ do
-      head [23 ..] `shouldBe` (23 :: Int)
+runTests = hspec Spec.spec
+-- runTests = hspecWith defaultConfig {configFormatter = Just progress} Spec.spec

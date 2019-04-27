@@ -18,10 +18,18 @@ library
   ghc-options:         -Wall -O2
   exposed-modules:     Lib
   -- other-extensions:    
+  other-modules:       RenderSpec
+                     , AnimationSpec
+                     , ImagePreloaderSpec
   build-depends:       base >=4.9 && <4.12
                      , frontend
                      , hspec
                      , QuickCheck
+                     , hspec-discover
+                     , ghcjs-dom >= 0.9 && <0.10
+                     , ghcjs-dom-jsffi 
+                     , containers
+
   hs-source-dirs:      src
   default-language:    Haskell2010
 
